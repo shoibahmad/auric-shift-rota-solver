@@ -88,7 +88,9 @@ it is disqualifying.
 budget is spent only where it says something is wrong and only on the lines
 responsible: `count > 4` re-reads just the lines read as inert, `count == 0`
 re-reads *exactly the core* — three lines of twenty. A paid repair is never a
-retry of the item.
+retry of the item. It does what it is for, even though the macro gain is
+modest: the number of items that emit an impossible answer — more than four
+assignments — falls from **11 at 1× to 1 at 3× and 10×** (`verify.py`).
 
 **The reply format was a component in disguise.** The dominant failure at full
 item length is derailing into commentary and never reaching the rest of the list
