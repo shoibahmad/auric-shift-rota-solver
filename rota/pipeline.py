@@ -18,6 +18,7 @@ Repair is therefore never a retry of the whole item. It is a re-read of the
 handful of lines the solver has just proved are carrying the error.
 """
 import collections
+import re
 
 from .extract import (parse_header, body_lines, build_prompt, parse_codes,
                       parse_one)
@@ -36,6 +37,7 @@ DEFAULT_COMPONENTS = {
     "mus": True,        # minimal core citation (vs citing every constraint)
     "calib": True,      # drop a distrusted constraint when the core is too
                         # small to be a real conflict -- free, no model call
+    "softneg": True,    # read a missed name+time line as a negative -- free
 }
 
 # Reply shape. Not a component -- it is one choice with three settings, kept
@@ -80,6 +82,65 @@ def rank(n_worlds):
     every count the task permits; among those, fewer is closer to the window.
     """
     return (0, 0) if n_worlds <= AMBIG_MAX else (1, n_worlds)
+
+
+def verdict(prob, cons, lines, comps):
+    """One extraction's finished verdict: (case, signature, worlds, core).
+
+    The signature is what a vote compares -- the rendered world set for a
+    satisfiable extraction, the cited core for a contradictory one -- so two
+    passes that reach the same answer by different constraint sets count as
+    agreeing, which is the agreement that matters.
+    """
+    cons = dict(cons)
+    worlds = prob.solve(list(cons.values()))
+    if comps["softneg"] and len(worlds) > 1:
+        cons = soft_negatives(prob, cons, lines)
+        worlds = prob.solve(list(cons.values()))
+    if comps["calib"] and not worlds:
+        cons, dropped = _calibrated_drop(prob, cons)
+        if dropped:
+            worlds = prob.solve(list(cons.values()))
+    if worlds:
+        case = "unique" if len(worlds) == 1 else "ambiguous"
+        sig = frozenset(tuple(sorted(
+            (p, f["block"], f.get("station", "")) for p, f in
+            prob.render(w).items())) for w in worlds)
+        return case, ("sat", len(worlds), sig), worlds, None, cons
+    indexed = [(i, cons[i]) for i in sorted(cons)]
+    core = pick_core(prob, indexed) if comps["mus"] else sorted(cons)
+    return "inconsistent", ("unsat", frozenset(core or ())), [], core, cons
+
+
+def vote_verdicts(cands):
+    """Pick a verdict from several, by majority on the case and then on the
+    answer itself.
+
+    Voting on the finished verdict rather than on the constraint set is the fix
+    for a real failure: at ten calls an item is extracted five times, and
+    per-line majority merging quietly *removes* a constraint that only two
+    passes found. When that constraint is the one the contradiction rests on,
+    a correctly-detected inconsistent item turns satisfiable, and the 10x
+    score came in below the 3x score because of it. A verdict a majority of
+    passes reached independently cannot be dissolved that way.
+
+    `cands` is a list of (case, sig, worlds, core, cons). Ties on the case go
+    to the more constrained reading -- inconsistent over ambiguous over unique
+    -- because the counts that lose a tie are the ones produced by dropping a
+    constraint, not by inventing one.
+    """
+    if not cands:
+        return None
+    cases = collections.Counter(c[0] for c in cands)
+    order = {"inconsistent": 0, "unique": 1, "ambiguous": 2}
+    best_case = min(cases, key=lambda k: (-cases[k], order[k]))
+    pool = [c for c in cands if c[0] == best_case]
+    sigs = collections.Counter(c[1] for c in pool)
+    best_sig = max(sigs, key=lambda s: (sigs[s], -len(str(s))))
+    for c in pool:
+        if c[1] == best_sig:
+            return c
+    return pool[0]
 
 
 class Solved:
@@ -148,6 +209,48 @@ def _lenient(raw, have, prob):
 
 
 MIN_CORE = 3           # the brief: every conflicting set here has >= 3 lines
+TIME_RE = re.compile(r"\b\d{1,2}:\d{2}\b")
+
+
+def soft_negatives(prob, cons, lines):
+    """Free repair for under-extraction, no model call.
+
+    A line read as asserting nothing, which nonetheless names exactly one
+    person and exactly one clock time, is tried as a negative block claim.
+    Three measurements make this cheap rather than reckless:
+
+      * no inert line in this task mentions a clock time except the two
+        families below, so the filter is nearly specific on its own;
+      * a refused request ("lobbied for 11:00 without success") and an
+          unresolved question ("nobody could remember whether") were measured
+          to be entailed as negatives in every world of every consistent item
+          -- 64/64 and 31/31 -- so reading them negatively changes nothing;
+      * the candidate is kept only if it removes worlds and leaves at least
+        one, so a reading that contradicts the rest of the extraction is
+        never adopted.
+
+    What it cannot catch is a *positive* block statement the model missed:
+    there the negative reading is actively wrong. That is the price, and it is
+    paid rarely enough to be worth +0.05 macro on a fixed extraction.
+    """
+    cur = dict(cons)
+    base = len(prob.solve(list(cur.values())))
+    for i, line in enumerate(lines):
+        if i in cur:
+            continue
+        times = TIME_RE.findall(line)
+        names = [p for p in prob.people if p in line]
+        if len(times) != 1 or len(names) != 1:
+            continue
+        cand = ("nblock", names[0], times[0])
+        if not prob.valid(cand):
+            continue
+        trial = dict(cur)
+        trial[i] = cand
+        n = len(prob.solve(list(trial.values())))
+        if n and n < base:
+            cur, base = trial, n
+    return cur
 
 
 def _calibrated_drop(prob, cons, tries=3):
@@ -215,29 +318,36 @@ def solve_item(item, client, budget, comps=None, want_trace=False, fmt=None):
 
     if comps["recover"] and len(worlds) > AMBIG_MAX:
         cons = _recover(raw, cons, prob, lines)
-        worlds = prob.solve(list(cons.values()))
-        trace.append(("recover", len(cons), len(worlds)))
+        passes[0] = cons
+        trace.append(("recover", len(cons), len(prob.solve(list(cons.values())))))
 
-    if comps["calib"] and not worlds:
-        cons, dropped = _calibrated_drop(prob, cons)
-        if dropped:
-            worlds = prob.solve(list(cons.values()))
-            trace.append(("calib-drop", len(dropped), len(worlds)))
+    # `verdict` applies the two free repairs -- soft negatives and the
+    # calibrated drop -- and returns the finished answer for this extraction.
+    # At 1x that is the whole system.
 
     # ---- spend what is left, guided by the count -------------------------
-    # Budget is spent on whichever of three things the count says is wrong,
-    # and a candidate is adopted only when it is at least as plausible as what
-    # it replaces. That makes extra calls monotone: 10x cannot be worse than
-    # 1x because a bad re-read is simply not taken.
+    # Each extraction becomes a *finished verdict*, and the answer is the
+    # verdict a majority of passes reached. The earlier design merged the
+    # constraint sets line by line and re-solved the merge, which failed in a
+    # specific and instructive way: per-line majority DROPS a constraint only
+    # two passes of five found, and when that is the constraint a contradiction
+    # rests on, a correctly-detected inconsistent item silently becomes
+    # satisfiable. The 10x score came in eleven points BELOW the 3x score
+    # because of it. Voting on verdicts cannot dissolve a verdict that way.
     votes_max = 3 if client.budget <= 3 else 5
     core_checked = False
     nf = 0
+    cands = [verdict(prob, cons, lines, comps)]
+    cur = cands[0]
     while client.left(iid) > 0:
+        worlds = cur[2]
         n = len(worlds)
         if n > AMBIG_MAX and comps["repair"] and nf < 3:
             # Under-constrained: a constraint was missed, and it is in a line
-            # read as saying nothing. Re-read only those lines.
-            focus = [i for i in range(len(lines)) if i not in cons]
+            # read as asserting nothing. Re-read only those lines -- not the
+            # item, and not the lines already translated.
+            base = cur[4]
+            focus = [i for i in range(len(lines)) if i not in base]
             if not focus:
                 break
             nf += 1
@@ -246,34 +356,35 @@ def solve_item(item, client, budget, comps=None, want_trace=False, fmt=None):
             added = {i: c for i, c in new.items() if i in focus}
             if not added:
                 break
-            cand = dict(cons)
+            cand = dict(base)
             cand.update(added)
-            w2 = prob.solve(list(cand.values()))
-            if not w2:
+            if not prob.sat(list(cand.values())):
                 # Taking the whole re-read collapses the item to a
-                # contradiction. Some of it is wrong, so add one constraint at
-                # a time and keep only what leaves the item satisfiable.
-                cand, w2 = _add_greedily(prob, cons, added)
-            if rank(len(w2)) <= rank(n):
-                cons, worlds = cand, w2
-            trace.append(("repair-missing", len(cons), len(worlds)))
-            if len(worlds) >= n:
+                # contradiction, so part of it is wrong. Add one at a time and
+                # keep only what leaves the item satisfiable.
+                cand, _w = _add_greedily(prob, base, added)
+            v = verdict(prob, cand, lines, comps)
+            trace.append(("repair-missing", len(cand), len(v[2])))
+            if rank(len(v[2])) <= rank(n):
+                cur = v
+                cands.append(v)
+            if len(cur[2]) >= n:
                 break                       # the re-read is not converging
         elif n == 0 and comps["repair"] and not core_checked:
-            # Over-constrained: either a real contradiction or an invented
-            # constraint, and if it is invented it is in the core. Re-read
-            # exactly those lines -- typically three of twenty.
+            # Over-constrained: either a contradiction the notes contain or a
+            # constraint the model invented, and if it is invented it is in the
+            # core. Re-read exactly those lines -- typically three of twenty.
             core_checked = True
-            indexed = [(i, cons[i]) for i in sorted(cons)]
-            core = mus(prob, indexed)
+            base = cur[4]
+            core = cur[3] or mus(prob, [(i, base[i]) for i in sorted(base)])
             if not core:
                 break
             new, _ = _extract_pass(client, iid, prob, lines, comps,
                                    focus=core, fmt=fmt)
-            cand = dict(cons)
+            cand = dict(base)
             changed = False
             for i in core:
-                if new.get(i) != cons.get(i):
+                if new.get(i) != base.get(i):
                     changed = True
                     if new.get(i) is None:
                         cand.pop(i, None)
@@ -281,33 +392,31 @@ def solve_item(item, client, budget, comps=None, want_trace=False, fmt=None):
                         cand[i] = new[i]
             trace.append(("repair-core", len(core), int(changed)))
             if not changed:
-                break        # the model stands by every statement in the core
-            cons = cand
-            worlds = prob.solve(list(cons.values()))
+                # The model re-read every statement in the core and stood by
+                # all of them. That is the strongest evidence available that
+                # the contradiction is in the notes rather than in the
+                # reading, so stop and cite it.
+                break
+            v = verdict(prob, cand, lines, comps)
+            cands.append(v)
+            cur = vote_verdicts(cands)
         elif comps["vote"] and len(passes) < votes_max:
             new, _ = _extract_pass(client, iid, prob, lines, comps, fmt=fmt)
             passes.append(new)
-            merged = merge_votes(passes, len(lines))
-            w2 = prob.solve(list(merged.values()))
-            if rank(len(w2)) <= rank(len(worlds)):
-                cons, worlds = merged, w2
-                core_checked = False
-            trace.append(("vote", len(cons), len(worlds)))
+            cands.append(verdict(prob, new, lines, comps))
+            # the line-by-line merge is offered as one more candidate rather
+            # than as an override: it is better than any single pass when the
+            # passes differ by noise, and worse when they differ by one pass
+            # finding a real constraint the others missed
+            cands.append(verdict(prob, merge_votes(passes, len(lines)),
+                                 lines, comps))
+            cur = vote_verdicts(cands)
+            trace.append(("vote", len(passes), len(cur[2])))
+            core_checked = False
         else:
             break
 
-    n = len(worlds)
-    if n == 1:
-        case = "unique"
-        core = None
-    elif n == 0:
-        case = "inconsistent"
-        idx = sorted(cons)
-        indexed = [(i, cons[i]) for i in idx]
-        core = pick_core(prob, indexed) if comps["mus"] else idx
-    else:
-        case = "ambiguous"
-        core = None
+    case, _sig, worlds, core, cons = cur
     return Solved(case, worlds, core, cons, lines, client.used(iid),
                   trace if want_trace else None)
 

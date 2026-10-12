@@ -61,8 +61,8 @@ in [ABLATION.md](ABLATION.md).
 Individual arms can be run by hand:
 
 ```bash
-./run items.json --budget 3x --out /tmp/a.json --components -repair
-./run items.json --budget 1x --out /tmp/b.json --components -solver
+./run items.json --budget 3x --out /tmp/a.json --drop repair
+./run items.json --budget 1x --out /tmp/b.json --drop solver
 ```
 
 ## Layout

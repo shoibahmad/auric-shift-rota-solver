@@ -272,7 +272,11 @@ _WORD = r"[^\s,]+"
 
 
 def _clean(tok):
-    return tok.strip().strip("<>[]{}\"'`*,.").strip()
+    # Trailing punctuation only. A colon is stripped at the ends but never from
+    # the middle, so "13:00" survives and "13:00?" and "packing." do not cost
+    # a constraint. 37 codes in a 60-item run were lost to exactly this before
+    # `?` and `;` were added.
+    return tok.strip().strip("<>[]{}\"'`*,.?!;:").strip()
 
 
 def parse_codes(reply, n_lines, problem):
@@ -300,7 +304,15 @@ def parse_codes(reply, n_lines, problem):
 
 def parse_one(code, problem):
     """One code string -> one validated constraint, or None."""
-    s = " ".join(_clean(code).split())
+    s = " ".join(str(code).split())
+    # The model sometimes quotes the line back and then answers it:
+    #   "Ingrid filled in the equipment survey." -> NONE
+    # Taking what follows the arrow is a salvage, not an interpretation: the
+    # code on the right is still the model's own answer.
+    for arrow in ("->", "=>", ":="):
+        if arrow in s:
+            s = s.rsplit(arrow, 1)[1]
+    s = " ".join(_clean(s).split())
     if not s:
         return None
     up = s.upper()

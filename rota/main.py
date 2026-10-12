@@ -77,7 +77,11 @@ def main(argv=None):
     ap.add_argument("--budget", default="1x", help="1x | 3x | 10x")
     ap.add_argument("--out", default="answers.json")
     ap.add_argument("--components", default="all",
-                    help="all | none | comma list | -name,-name to drop")
+                    help="all | none | comma list of components to keep")
+    ap.add_argument("--drop", default="",
+                    help="comma list of components to switch off, e.g. "
+                         "--drop vote,repair (argparse eats a leading '-', so "
+                         "this is the form to use on the command line)")
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--fmt", default=None, help="dense | dash | sparse")
     ap.add_argument("--trace", default=None, help="write a per-item trace here")
@@ -95,6 +99,10 @@ def main(argv=None):
     if a.limit:
         items = items[:a.limit]
     comps = parse_components(a.components)
+    for name in (x.strip() for x in a.drop.split(",") if x.strip()):
+        if name.lstrip("-") not in comps:
+            raise SystemExit(f"unknown component: {name}")
+        comps[name.lstrip("-")] = False
 
     log = [] if a.calls_log else None
     answers, traces, client = run(items, a.budget, comps, a.workers, log=log,
