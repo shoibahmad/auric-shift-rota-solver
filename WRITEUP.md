@@ -131,10 +131,13 @@ cite either; catching them needs semantic matching, and the obvious symbolic
 proxy (same names mentioned) also groups "A is earlier than B" with "A is next
 to B". Removed rather than guessed at.
 
-**`recover` and `strict`, kept but near-dead** (−0.004 each, a tenth of the
-noise). Most of what `recover` was for proved fixable upstream — the strict
-parser was discarding 37 codes a run over a trailing `?`. Reported at roughly
-zero rather than quietly deleted.
+**`recover` and `strict`, kept but near-dead.** Replay puts both at −0.004, and
+the live 1× table has `-strict` a fraction *above* full — both are inside the
+noise, i.e. no measurable effect either way. Most of what `recover` was for
+proved fixable upstream: the strict parser was discarding 37 codes a run over a
+trailing `?`. I report them at roughly zero rather than quietly deleting them,
+and keep `strict` on anyway, because refusing to repair a hallucinated name is
+a property I want on a held-out set where the model may invent more of them.
 
 **An honest non-choice.** `n=3` sampling returns three completions in one HTTP
 request, which the counting proxy would see as one call — self-consistency at
