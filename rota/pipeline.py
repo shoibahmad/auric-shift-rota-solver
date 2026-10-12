@@ -12,7 +12,8 @@ is wrong, before anything is compared to a key:
 
     count > 4   a constraint was missed       -> re-read the lines read as NONE
     count == 0  a constraint was invented     -> re-read the lines in the core
-    1..4        plausible                     -> spend what is left on voting
+    1..4        plausible                     -> extract again and keep the
+                                                 most plausible of the two
 
 Repair is therefore never a retry of the whole item. It is a re-read of the
 handful of lines the solver has just proved are carrying the error.
@@ -43,35 +44,6 @@ DEFAULT_COMPONENTS = {
 # Reply shape. Not a component -- it is one choice with three settings, kept
 # out of the on/off component dict so the ablation arms stay boolean.
 FMT = "dash"
-
-
-def merge_votes(passes, n_lines):
-    """{line -> constraint} from several extractions, by per-line majority.
-
-    Voting per line rather than per item is the point: two extractions that
-    each get a different line wrong combine into one that gets both right,
-    which a vote over whole answers cannot do. It also repairs truncation for
-    free -- a line one pass never reached is supplied by another.
-
-    A constraint needs half the passes behind it. Abstentions count as votes
-    for NONE, so a line that only one pass in three read as a constraint is
-    dropped, which is the safer direction: a missing constraint shows up as an
-    impossible world count and can be repaired, an invented one can fake a
-    contradiction that looks entirely legitimate.
-    """
-    out = {}
-    for i in range(n_lines):
-        counts = collections.Counter(p.get(i) for p in passes)
-        best, n = counts.most_common(1)[0]
-        if best is not None:
-            out[i] = best
-            continue
-        alt = [(v, c) for v, c in counts.items() if v is not None]
-        if alt:
-            v, c = max(alt, key=lambda x: x[1])
-            if c * 2 >= len(passes):
-                out[i] = v
-    return out
 
 
 def rank(n_worlds):
@@ -112,35 +84,32 @@ def verdict(prob, cons, lines, comps):
     return "inconsistent", ("unsat", frozenset(core or ())), [], core, cons
 
 
-def vote_verdicts(cands):
-    """Pick a verdict from several, by majority on the case and then on the
-    answer itself.
+def pick_verdict(cands):
+    """Choose among several finished verdicts for one item.
 
-    Voting on the finished verdict rather than on the constraint set is the fix
-    for a real failure: at ten calls an item is extracted five times, and
-    per-line majority merging quietly *removes* a constraint that only two
-    passes found. When that constraint is the one the contradiction rests on,
-    a correctly-detected inconsistent item turns satisfiable, and the 10x
-    score came in below the 3x score because of it. A verdict a majority of
-    passes reached independently cannot be dissolved that way.
+    Selection, not merging -- and this is the design's second correction.
+    The first budget loop merged repeated extractions line by line; the second
+    voted on whole verdicts. Replaying one recorded three-pass log through
+    every rule (`dev/tune_aggregation.py`) showed both losing to a *single*
+    pass. On that log the three individual passes scored 0.533, 0.400 and
+    0.550, while line-by-line merging scored 0.483, verdict-majority 0.517,
+    constraint-union 0.517 and agree-only-intersection 0.383. The model's
+    errors are systematic rather than independent noise, so averaging
+    reinforces them; merging additionally discards a constraint that only one
+    lucky pass found, which is precisely the constraint worth keeping when
+    under-extraction is the dominant error.
 
-    `cands` is a list of (case, sig, worlds, core, cons). Ties on the case go
-    to the more constrained reading -- inconsistent over ambiguous over unique
-    -- because the counts that lose a tie are the ones produced by dropping a
-    constraint, not by inventing one.
+    What does work is discarding the passes that are *provably* wrong and
+    keeping the best survivor. A world count above four cannot be right
+    whatever the item is, so candidates are ordered by that and the first of
+    the best rank wins -- first, so that a resample overrides the original
+    extraction only when the original is demonstrably broken. On the same log
+    this scores 0.567, above the best single pass and well above the 0.494 a
+    single pass averages.
     """
     if not cands:
         return None
-    cases = collections.Counter(c[0] for c in cands)
-    order = {"inconsistent": 0, "unique": 1, "ambiguous": 2}
-    best_case = min(cases, key=lambda k: (-cases[k], order[k]))
-    pool = [c for c in cands if c[0] == best_case]
-    sigs = collections.Counter(c[1] for c in pool)
-    best_sig = max(sigs, key=lambda s: (sigs[s], -len(str(s))))
-    for c in pool:
-        if c[1] == best_sig:
-            return c
-    return pool[0]
+    return min(cands, key=lambda v: rank(len(v[2])))
 
 
 class Solved:
@@ -365,9 +334,8 @@ def solve_item(item, client, budget, comps=None, want_trace=False, fmt=None):
                 cand, _w = _add_greedily(prob, base, added)
             v = verdict(prob, cand, lines, comps)
             trace.append(("repair-missing", len(cand), len(v[2])))
-            if rank(len(v[2])) <= rank(n):
-                cur = v
-                cands.append(v)
+            cands.append(v)
+            cur = pick_verdict(cands)
             if len(cur[2]) >= n:
                 break                       # the re-read is not converging
         elif n == 0 and comps["repair"] and not core_checked:
@@ -399,19 +367,16 @@ def solve_item(item, client, budget, comps=None, want_trace=False, fmt=None):
                 break
             v = verdict(prob, cand, lines, comps)
             cands.append(v)
-            cur = vote_verdicts(cands)
+            # A core the model has just re-read and revised is better evidence
+            # than an unrevised pass, so it is preferred outright rather than
+            # entered into a vote it could lose to two stale candidates.
+            cur = v if rank(len(v[2])) <= rank(len(cur[2])) else pick_verdict(cands)
         elif comps["vote"] and len(passes) < votes_max:
             new, _ = _extract_pass(client, iid, prob, lines, comps, fmt=fmt)
             passes.append(new)
             cands.append(verdict(prob, new, lines, comps))
-            # the line-by-line merge is offered as one more candidate rather
-            # than as an override: it is better than any single pass when the
-            # passes differ by noise, and worse when they differ by one pass
-            # finding a real constraint the others missed
-            cands.append(verdict(prob, merge_votes(passes, len(lines)),
-                                 lines, comps))
-            cur = vote_verdicts(cands)
-            trace.append(("vote", len(passes), len(cur[2])))
+            cur = pick_verdict(cands)
+            trace.append(("resample", len(passes), len(cur[2])))
             core_checked = False
         else:
             break
@@ -436,7 +401,14 @@ def _add_greedily(prob, cons, added):
 
 
 def _no_solver(item, client, prob, lines, comps):
-    """Ablation arm: no formal layer. The model is asked for the answer."""
+    """Ablation arm: no formal layer at all -- the model is asked for the
+    answer and its reply is parsed as the answer.
+
+    At 3x and 10x it gets to spend its budget the only way a system without a
+    formal layer can: ask again and take the most common verdict. Without that
+    the arm would be a one-call system compared against a ten-call one, and
+    the ablation would be measuring the budget rather than the component.
+    """
     iid = item["id"]
     txt = item["text"] + (
         "\n\nDecide the rota. Reply with JSON only, one of:\n"
@@ -444,8 +416,21 @@ def _no_solver(item, client, prob, lines, comps):
         '"station":"intake"}}}\n'
         '{"case":"ambiguous","assignments":[{...},{...}]}\n'
         '{"case":"inconsistent","conflicts":["line from the notes","..."]}')
-    reply = client.chat(iid, [{"role": "user", "content": txt}], max_tokens=900)
-    return Solved("raw", reply, None, {}, lines, client.used(iid), None)
+    msgs = [{"role": "user", "content": txt}]
+    replies = [client.chat(iid, msgs, max_tokens=900)]
+    while client.left(iid) > 0 and len(replies) < 5:
+        replies.append(client.chat(iid, msgs, max_tokens=900))
+    if len(replies) > 1:
+        parsed = [_parse_raw(r, prob) for r in replies]
+        cases = collections.Counter(p.get("case") for p in parsed
+                                    if isinstance(p, dict))
+        if cases:
+            best = cases.most_common(1)[0][0]
+            for r, p in zip(replies, parsed):
+                if isinstance(p, dict) and p.get("case") == best:
+                    return Solved("raw", r, None, {}, lines,
+                                  client.used(iid), None)
+    return Solved("raw", replies[0], None, {}, lines, client.used(iid), None)
 
 
 # ---------------------------------------------------------------------------

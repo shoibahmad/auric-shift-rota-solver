@@ -32,6 +32,8 @@ ARMS = [
     ("-vote",     "-vote",     "no self-consistency over extractions"),
     ("-repair",   "-repair",   "no count-triggered targeted re-reads"),
     ("-mus",      "-mus",      "cite every constraining line, not a minimal core"),
+    ("-calib",    "-calib",    "no calibrated drop on a too-small conflict (free)"),
+    ("-softneg",  "-softneg",  "no soft negatives on missed name+time lines (free)"),
 ]
 
 # Components that cannot act at 1x: one call leaves nothing to spend, so the
