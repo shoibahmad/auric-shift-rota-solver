@@ -43,11 +43,71 @@ mask it. The reasoning is in a comment at the top of `ablate.py`.
 
 ## Live table
 
-<!-- LIVE_TABLE -->
+Three runs per cell unless noted; **mean +/- population standard deviation** of macro exact match. Highest run count seen: 3.
+
+| arm | 1x | 3x | 10x | what it does |
+|---|---|---|---|---|
+| `full` | 0.467 +/- 0.036 | 0.506 +/- 0.028 | 0.522 +/- 0.016 | every component on |
+| `-solver` | 0.000 +/- 0.000 | 0.000 +/- 0.000 | 0.000 +/- 0.000 | no formal layer: the model is asked for the answer |
+| `-rules` | 0.333 +/- 0.027 | -- | -- | extraction prompt without the inert-family rules |
+| `-strict` | 0.472 +/- 0.016 | -- | -- | accept codes the validator drops, by fuzzy name matching |
+
+### Per-kind rates and the two diagnostics
+
+| arm | budget | unique | ambiguous | inconsistent | amb_partial | inc_label_only | calls/item |
+|---|---|---|---|---|---|---|---|
+| `full` | 1x | 0.42 | 0.38 | 0.60 | 0.38 | 0.15 | 1-1 |
+| `full` | 3x | 0.50 | 0.47 | 0.55 | 0.47 | 0.17 | 2-3 |
+| `full` | 10x | 0.52 | 0.45 | 0.60 | 0.47 | 0.20 | 2-10 |
+| `-solver` | 1x | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 1-1 |
+| `-solver` | 3x | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 3-3 |
+| `-solver` | 10x | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 5-5 |
+| `-rules` | 1x | 0.28 | 0.28 | 0.43 | 0.28 | 0.08 | 1-1 |
+| `-strict` | 1x | 0.52 | 0.37 | 0.53 | 0.37 | 0.22 | 1-1 |
+
+### Confusion matrix, full system
+
+Rows are the true kind, columns what was declared. Summed over the three runs, so each row totals 60.
+
+**1x**
+
+| true \ declared | unique | ambiguous | inconsistent | unparsed |
+|---|---|---|---|---|
+| unique | 25 | 27 | 8 | 0 |
+| ambiguous | 1 | 45 | 14 | 0 |
+| inconsistent | 1 | 14 | 45 | 0 |
+
+**3x**
+
+| true \ declared | unique | ambiguous | inconsistent | unparsed |
+|---|---|---|---|---|
+| unique | 31 | 23 | 6 | 0 |
+| ambiguous | 1 | 46 | 13 | 0 |
+| inconsistent | 4 | 13 | 43 | 0 |
+
+**10x**
+
+| true \ declared | unique | ambiguous | inconsistent | unparsed |
+|---|---|---|---|---|
+| unique | 31 | 23 | 6 | 0 |
+| ambiguous | 2 | 44 | 14 | 0 |
+| inconsistent | 4 | 8 | 48 | 0 |
+
 
 ## Replay table — symbolic components, no sampling noise
 
-<!-- REPLAY_TABLE -->
+
+| arm | macro (mean of 4) | unique | ambiguous | inconsistent | vs full |
+|---|---|---|---|---|---|
+| `full` | 0.479 +/- 0.036 | 0.47 | 0.40 | 0.56 | -- |
+| `-mus` | 0.292 +/- 0.028 | 0.47 | 0.40 | 0.00 | -0.187 |
+| `-calib` | 0.458 +/- 0.049 | 0.47 | 0.34 | 0.56 | -0.021 |
+| `-softneg` | 0.421 +/- 0.030 | 0.41 | 0.29 | 0.56 | -0.058 |
+| `-calib,-softneg` | 0.400 +/- 0.043 | 0.41 | 0.23 | 0.56 | -0.079 |
+| `-recover` | 0.475 +/- 0.042 | 0.47 | 0.39 | 0.56 | -0.004 |
+| `-strict` | 0.475 +/- 0.030 | 0.47 | 0.40 | 0.55 | -0.004 |
+
+logs: fmt_dash_calls.json, v2_1x_calls.json, p3_calls.json, p5_calls.json
 
 ## Reading it
 
