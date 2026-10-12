@@ -1,27 +1,35 @@
-"""DEV ONLY. Re-run the symbolic layer over a saved calls log.
+"""Measure the symbolic components exactly, by replay instead of re-running.
 
-The model's replies are the expensive part and the symbolic layer is free, so
-every symbolic component was tuned by replaying one recorded 1x run rather
-than by re-querying the endpoint. The extraction is held fixed; only the code
-after it changes. That makes the comparison exact as well as cheap -- two
-symbolic variants see literally the same model output, with none of the
-sampling noise a fresh run at temperature 1.0 would add.
+Five of the ten ablation arms change only code that runs *after* the model has
+spoken: `mus`, `calib`, `softneg`, `recover`, `strict`. For those, a live
+re-run is strictly worse evidence than a replay -- it pays for new calls and
+then adds sampling noise on top, and at temperature 1.0 that noise (±0.05
+macro, and 0.15 between individual passes) is larger than several of the
+effects being measured.
 
-    python3 dev/replay.py runs/fmt_dash_calls.json
+This replays recorded extractions through the real pipeline functions with one
+component switched off, so every arm sees literally the same model output. The
+live table in ABLATION.md is what the graders re-run; this one is what the
+component claims in the writeup rest on.
+
+    python3 dev/replay.py runs/v3_1x_calls.json runs/fmt_dash_calls.json ...
 """
 import json
 import sys
 import os
-import argparse
+import statistics
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from rota.extract import parse_header, body_lines, parse_codes      # noqa: E402
-from rota.solver import Problem, pick_core                          # noqa: E402
+from rota.solver import Problem                                     # noqa: E402
 from rota import pipeline as P                                      # noqa: E402
 from score import score                                             # noqa: E402
 
+SYMBOLIC_ARMS = ["full", "-mus", "-calib", "-softneg", "-recover", "-strict"]
 
-def replay(items, log, use_recover, use_calib, use_mus, use_softneg):
+
+def replay(items, log, comps):
+    """Answers for every item, from the first recorded reply per item."""
     first = {}
     for rec in log:
         first.setdefault(rec["item"], rec)
@@ -36,89 +44,60 @@ def replay(items, log, use_recover, use_calib, use_mus, use_softneg):
             out[iid] = {"case": "unique", "assignment": {}}
             continue
         cons, raw = parse_codes(rec["reply"], len(lines), prob)
-        worlds = prob.solve(list(cons.values()))
-
-        if use_recover and len(worlds) > P.AMBIG_MAX:
+        if not comps["strict"]:
+            cons = dict(cons)
+            cons.update(P._lenient(raw, cons, prob))
+        if comps["recover"] and len(prob.solve(list(cons.values()))) > P.AMBIG_MAX:
             cons = P._recover(raw, cons, prob, lines)
-            worlds = prob.solve(list(cons.values()))
-        if use_softneg and len(worlds) > 1:
-            cons = soft_negatives(prob, cons, lines)
-            worlds = prob.solve(list(cons.values()))
-        if use_calib and not worlds:
-            cons, dropped = P._calibrated_drop(prob, cons)
-            if dropped:
-                worlds = prob.solve(list(cons.values()))
-
-        if len(worlds) == 1:
+        case, _sig, worlds, core, _c = P.verdict(prob, cons, lines, comps)
+        if case == "unique":
             out[iid] = {"case": "unique", "assignment": prob.render(worlds[0])}
-        elif worlds:
+        elif case == "ambiguous":
             out[iid] = {"case": "ambiguous",
-                        "assignments": [prob.render(w) for w
-                                        in worlds[:P.RENDER_CAP]]}
+                        "assignments": [prob.render(w)
+                                        for w in worlds[:P.RENDER_CAP]]}
         else:
-            indexed = [(i, cons[i]) for i in sorted(cons)]
-            core = (pick_core(prob, indexed) if use_mus else sorted(cons))
             out[iid] = {"case": "inconsistent",
                         "conflicts": [lines[i] for i in (core or [])]}
     return out
 
 
-def soft_negatives(prob, cons, lines):
-    """Candidate component (under test): a line read as NONE that names a
-    person and a clock time is treated as a negative block claim when adding
-    it keeps the item satisfiable and removes worlds.
-
-    The rationale: no padding line in this task mentions a clock time, and the
-    two inert families that do -- a refused request and an unresolved question
-    -- were measured to be entailed as negatives anyway, so reading them that
-    way is free. The risk is a *positive* block statement the model missed,
-    where the negative reading is actively wrong.
-    """
-    import re
-    TIME = re.compile(r"\b\d{1,2}:\d{2}\b")
-    cur = dict(cons)
-    base = len(prob.solve(list(cur.values())))
-    for i, line in enumerate(lines):
-        if i in cur:
-            continue
-        times = TIME.findall(line)
-        names = [p for p in prob.people if p in line]
-        if len(times) != 1 or len(names) != 1:
-            continue
-        cand = ("nblock", names[0], times[0])
-        if not prob.valid(cand):
-            continue
-        trial = dict(cur)
-        trial[i] = cand
-        n = len(prob.solve(list(trial.values())))
-        if n and n < base:
-            cur, base = trial, n
-    return cur
+def comps_for(arm):
+    c = dict(P.DEFAULT_COMPONENTS)
+    if arm != "full":
+        c[arm.lstrip("-")] = False
+    return c
 
 
 if __name__ == "__main__":
-    ap = argparse.ArgumentParser()
-    ap.add_argument("log")
-    ap.add_argument("--items", default="items.json")
-    ap.add_argument("--key", default="visible_key.json")
-    a = ap.parse_args()
-    items = json.load(open(a.items, encoding="utf-8"))
-    key = json.load(open(a.key, encoding="utf-8"))
-    log = json.load(open(a.log, encoding="utf-8"))
+    logs = sys.argv[1:] or ["runs/v3_1x_calls.json"]
+    items = json.load(open("items.json", encoding="utf-8"))
+    key = json.load(open("visible_key.json", encoding="utf-8"))
 
-    variants = [
-        ("extraction only",            0, 0, 1, 0),
-        ("+ recover",                  1, 0, 1, 0),
-        ("+ recover + calib",          1, 1, 1, 0),
-        ("+ recover + calib, no mus",  1, 1, 0, 0),
-        ("+ recover + calib + softneg", 1, 1, 1, 1),
-        ("+ recover + softneg",        1, 0, 1, 1),
-    ]
-    print(f"replaying {a.log}  ({len({r['item'] for r in log})} items)\n")
-    for name, rec, cal, m, sn in variants:
-        sub = replay(items, log, rec, cal, m, sn)
-        r = score(key, sub, items)
-        pc = r["per_case_rate"]
-        print(f"  {name:30s} macro={r['macro_exact_match']:.4f}  "
-              f"u={pc['unique']:.2f} a={pc['ambiguous']:.2f} "
-              f"i={pc['inconsistent']:.2f}")
+    print(f"replaying {len(logs)} recorded 1x extraction(s) through the "
+          f"symbolic layer\n")
+    print(f"| arm | macro (mean of {len(logs)}) | unique | ambiguous | "
+          f"inconsistent | vs full |")
+    print("|---|---|---|---|---|---|")
+    base = None
+    for arm in SYMBOLIC_ARMS:
+        comps = comps_for(arm)
+        macros, pcs = [], []
+        for path in logs:
+            log = json.load(open(path, encoding="utf-8"))
+            r = score(key, replay(items, log, comps), items)
+            macros.append(r["macro_exact_match"])
+            pcs.append(r["per_case_rate"])
+        m = statistics.mean(macros)
+        sd = statistics.pstdev(macros) if len(macros) > 1 else 0.0
+        avg = {k: statistics.mean(p[k] for p in pcs) for k in
+               ("unique", "ambiguous", "inconsistent")}
+        if base is None:
+            base = m
+            delta = "--"
+        else:
+            delta = f"{m - base:+.3f}"
+        spread = f" ± {sd:.3f}" if len(macros) > 1 else ""
+        print(f"| `{arm}` | {m:.3f}{spread} | {avg['unique']:.2f} | "
+              f"{avg['ambiguous']:.2f} | {avg['inconsistent']:.2f} | {delta} |")
+    print(f"\nlogs: {', '.join(os.path.basename(p) for p in logs)}")

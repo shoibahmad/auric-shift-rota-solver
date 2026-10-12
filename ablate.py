@@ -40,6 +40,33 @@ ARMS = [
 # arm is identical to `full` by construction and is not re-run.
 ONLY_MULTI = {"-vote", "-repair"}
 
+# Which budgets each arm is run at.
+#
+# `focused` is what ABLATION.md reports, and it is not a shortcut -- it puts
+# the runs where they change a conclusion. Run-to-run spread at temperature
+# 1.0 is +/-0.05 to 0.10 macro on 60 items, which is larger than several of
+# the effects being measured, so three runs of the cells that matter is better
+# evidence than one run of everything. Each arm is run at the budgets where
+# its component can actually act: a component that only spends extra calls has
+# nothing to do at 1x, and a component that acts on the extraction is measured
+# at 1x where no repair can mask it. `dev/replay.py` additionally measures
+# every purely-symbolic arm over four recorded extractions with no sampling
+# noise at all.
+#
+# `--plan full` runs every arm at every budget, for anyone who wants it.
+FOCUSED = {
+    "full":     ("1x", "3x", "10x"),
+    "-solver":  ("1x", "3x", "10x"),
+    "-mus":     ("1x",),
+    "-calib":   ("1x",),
+    "-softneg": ("1x",),
+    "-rules":   ("1x",),
+    "-strict":  ("1x",),
+    "-recover": ("1x",),
+    "-vote":    ("3x", "10x"),
+    "-repair":  ("3x", "10x"),
+}
+
 HEAD = ("| arm | " + " | ".join("{b} macro".format(b=b) for b in ("1x", "3x", "10x"))
         + " | what it does |")
 
@@ -76,6 +103,9 @@ def main():
     ap.add_argument("--outdir", default="runs/ablation")
     ap.add_argument("--workers", type=int, default=8)
     ap.add_argument("--arms", default="", help="comma list of arm names")
+    ap.add_argument("--plan", default="focused",
+                    help="focused (default: each arm at the budgets where its "
+                         "component can act) | full (every arm x every budget)")
     ap.add_argument("--limit", type=int, default=None)
     a = ap.parse_args()
 
@@ -99,6 +129,9 @@ def main():
             if name in ONLY_MULTI and b == "1x":
                 table[(name, b)] = ("=full", None)
                 continue
+            if a.plan == "focused" and b not in FOCUSED.get(name, budgets):
+                table[(name, b)] = ("skipped", None)
+                continue
             macros, details = cell(items, key, b, comps, a.outdir,
                                    name.replace("-", "no_"), a.runs, a.workers)
             table[(name, b)] = (macros, details)
@@ -106,8 +139,12 @@ def main():
 
     lines = ["# Ablation",
              "",
-             f"items: `{a.items}` ({len(items)})  |  runs per cell: {a.runs}  |"
-             f"  headline metric: macro exact match",
+             f"items: `{a.items}` ({len(items)})  |  runs per cell: {a.runs}"
+             f"  |  plan: `{a.plan}`  |  headline: macro exact match",
+             "",
+             "A cell reading `--` was not run at that budget under the "
+             "`focused` plan; see the note in `ablate.py`. `= full` means the "
+             "arm is identical to the full system there by construction.",
              "",
              "| arm | " + " | ".join(f"{b}" for b in budgets) + " | what it does |",
              "|---|" + "---|" * len(budgets) + "---|"]
@@ -117,6 +154,8 @@ def main():
             m, _d = table[(name, b)]
             if m == "=full":
                 cells.append("_= full_")
+            elif m == "skipped":
+                cells.append("--")
             elif a.runs > 1:
                 cells.append(f"{statistics.mean(m):.3f} ± "
                              f"{statistics.pstdev(m):.3f}")

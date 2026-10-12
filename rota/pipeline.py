@@ -1,22 +1,31 @@
 """Budget-aware orchestration.
 
-One call per item buys a full line-by-line extraction. Everything after that is
-the solver telling the extractor where it is probably wrong, and spending the
-remaining budget only there.
+One call per item buys a full line-by-line extraction. Two free symbolic
+repairs then run, and at 1x that is the entire system. Everything beyond the
+first call is the solver telling the extractor where it is probably wrong and
+spending the remaining budget only there.
 
-The signal that makes targeted repair possible is cheap and comes free with an
-exhaustive enumerator: the number of worlds consistent with what was extracted.
-The brief fixes the shape of a legitimate answer -- an ambiguous item has two
-to four worlds -- so a count outside {0} U [1,4] is a proof that the extraction
-is wrong, before anything is compared to a key:
+The signal that makes this possible is cheap and comes free with an exhaustive
+enumerator: the number of worlds consistent with what was extracted. The brief
+fixes the shape of a legitimate answer -- an item has one world, two to four,
+or none -- so a count above four is a proof that the extraction is wrong,
+established without reference to any key:
 
-    count > 4   a constraint was missed       -> re-read the lines read as NONE
-    count == 0  a constraint was invented     -> re-read the lines in the core
-    1..4        plausible                     -> extract again and keep the
-                                                 most plausible of the two
+    count > 4   a constraint was missed    -> re-read the lines read as NONE
+    count == 0  a constraint was invented  -> re-read the lines in the core
+    1..4        plausible                  -> extract again, keep the better
 
-Repair is therefore never a retry of the whole item. It is a re-read of the
-handful of lines the solver has just proved are carrying the error.
+A paid repair is never a retry of the item. It is a re-read of the handful of
+lines the solver has just proved are carrying the error -- three of twenty for
+a contradiction, the untranslated dozen for an under-constrained item.
+
+Two findings shaped this file more than any prompt wording:
+
+  * the two *free* repairs -- `soft_negatives` and `_calibrated_drop` -- are
+    worth more than any paid one, because both act on proofs rather than on
+    guesses, and both work at 1x where there is no budget to spend;
+  * combining several extractions is worse than choosing between them. See
+    `pick_verdict`.
 """
 import collections
 import re
@@ -106,10 +115,31 @@ def pick_verdict(cands):
     extraction only when the original is demonstrably broken. On the same log
     this scores 0.567, above the best single pass and well above the 0.494 a
     single pass averages.
+
+    One refinement, from watching 3x come in *below* 1x: a contradiction has
+    to be corroborated to win. An under-constrained first pass that is
+    re-sampled into an unsatisfiable one looks like progress to the rank
+    alone -- no worlds is a count the task permits, too many is not -- and
+    four genuinely-inconsistent items were being traded for four wrong
+    `unique` answers that way. So a contradiction counts only if it was the
+    first thing the system concluded, or if a second candidate reaches the
+    same core independently. A contradiction the system found once, late, and
+    never again, is a mistranslation.
     """
     if not cands:
         return None
-    return min(cands, key=lambda v: rank(len(v[2])))
+    pool = sorted(cands, key=lambda v: rank(len(v[2])))
+    best = rank(len(pool[0][2]))
+    pool = [v for v in pool if rank(len(v[2])) == best]
+    if len(cands) > 1:
+        sat = [v for v in pool if v[2]]
+        unsat = [v for v in pool if not v[2]]
+        cores = collections.Counter(v[1] for v in unsat)
+        corroborated = [v for v in unsat
+                        if cores[v[1]] > 1 or v is cands[0]]
+        if sat and unsat and not corroborated:
+            pool = sat
+    return pool[0]
 
 
 class Solved:
@@ -347,30 +377,44 @@ def solve_item(item, client, budget, comps=None, want_trace=False, fmt=None):
             core = cur[3] or mus(prob, [(i, base[i]) for i in sorted(base)])
             if not core:
                 break
-            new, _ = _extract_pass(client, iid, prob, lines, comps,
-                                   focus=core, fmt=fmt)
+            # A core is three lines, so a re-read is cheap and can be done
+            # more than once -- which it must be. The first version of this
+            # took a single re-read as authoritative and overwrote the core
+            # whenever the model came back with anything different. At
+            # temperature 1.0 the model comes back with something different
+            # all the time: individual full extractions of the same item score
+            # anywhere from 0.400 to 0.550, so one disagreement is not evidence
+            # that the first reading was wrong. Instead the re-reads are votes
+            # on those lines, and the original keeps its reading unless the
+            # re-reads actually agree with each other against it.
+            reads = {i: [base.get(i)] for i in core}
+            n_reads = 0
+            while n_reads < 2 and client.left(iid) > 0:
+                new, _ = _extract_pass(client, iid, prob, lines, comps,
+                                       focus=core, fmt=fmt)
+                n_reads += 1
+                for i in core:
+                    reads[i].append(new.get(i))
             cand = dict(base)
             changed = False
             for i in core:
-                if new.get(i) != base.get(i):
+                tally = collections.Counter(reads[i])
+                top, votes = tally.most_common(1)[0]
+                # strict majority of all readings, original included
+                if votes * 2 > len(reads[i]) and top != base.get(i):
                     changed = True
-                    if new.get(i) is None:
+                    if top is None:
                         cand.pop(i, None)
                     else:
-                        cand[i] = new[i]
-            trace.append(("repair-core", len(core), int(changed)))
+                        cand[i] = top
+            trace.append(("repair-core", len(core), n_reads, int(changed)))
             if not changed:
-                # The model re-read every statement in the core and stood by
-                # all of them. That is the strongest evidence available that
-                # the contradiction is in the notes rather than in the
-                # reading, so stop and cite it.
+                # The re-reads did not agree on anything different. That is the
+                # strongest evidence available that the contradiction is in the
+                # notes rather than in the reading, so stop and cite it.
                 break
-            v = verdict(prob, cand, lines, comps)
-            cands.append(v)
-            # A core the model has just re-read and revised is better evidence
-            # than an unrevised pass, so it is preferred outright rather than
-            # entered into a vote it could lose to two stale candidates.
-            cur = v if rank(len(v[2])) <= rank(len(cur[2])) else pick_verdict(cands)
+            cands.append(verdict(prob, cand, lines, comps))
+            cur = pick_verdict(cands)
         elif comps["vote"] and len(passes) < votes_max:
             new, _ = _extract_pass(client, iid, prob, lines, comps, fmt=fmt)
             passes.append(new)
