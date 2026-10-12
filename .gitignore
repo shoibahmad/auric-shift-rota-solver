@@ -1,0 +1,19 @@
+# Secrets — never commit the endpoint key
+.env
+.env.*
+!.env.example
+
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+.pytest_cache/
+
+# Run artifacts
+runs/
+out/
+*.log
+answers*.json
+!example_answers.json
