@@ -11,8 +11,17 @@ enumerating the 720 possible worlds of an item and reasoning over the set.
 - **Everything downstream is symbolic**: world enumeration, case decision, and
   minimal-unsatisfiable-subset search for the citations.
 
-See [WRITEUP.md](WRITEUP.md) for how the model was characterised, why each
-component exists, what was removed, and where the system breaks.
+| budget | macro exact match | per-kind (u / a / i) |
+|---|---|---|
+| 1x | **0.467 +/- 0.036** | 0.42 / 0.38 / 0.60 |
+| 3x | **0.506 +/- 0.028** | 0.50 / 0.47 / 0.55 |
+| 10x | **0.522 +/- 0.016** | 0.52 / 0.45 / 0.60 |
+| the same model with no formal layer | **0.000 +/- 0.000** | 0.00 / 0.00 / 0.00 |
+
+Three runs each, provided scorer, `visible_key.json`. See
+[WRITEUP.md](WRITEUP.md) for how the model was characterised, why each
+component exists, what was removed, and where the system breaks --
+including why the curve is nearly flat.
 
 ## Running it
 
@@ -62,13 +71,25 @@ gets at least one call; `1x` is exactly one.
 ## The ablation
 
 ```bash
+# the live table: every arm re-run end to end, three runs per cell
 python3 ablate.py --items items.json --key visible_key.json \
-    --budgets 1x,3x,10x --runs 3 --outdir runs/ablation
+    --budgets 1x,3x,10x --runs 3 --plan focused --outdir runs/ablation
+
+# the symbolic arms again, replayed over recorded extractions: no new calls,
+# and so no sampling noise in the comparison
+python3 dev/replay.py runs/fmt_dash_calls.json runs/p3_calls.json \
+    > runs/replay_table.md
+
+# assemble ABLATION.md from the tracked template and the two tables
+python3 dev/build_ablation.py --outdir runs/ablation \
+    --replay runs/replay_table.md
 ```
 
-This writes `runs/ablation/ablation.md` and, for every cell of the table, the
-`answers.json`, `score.json` and per-item trace that produced it. Results are
-in [ABLATION.md](ABLATION.md).
+`ablate.py` writes, for every cell of the table, the `answers.json`,
+`score.json` and per-item trace that produced it, so any number can be traced
+back to the answers behind it. Results and commentary:
+[ABLATION.md](ABLATION.md), assembled from
+[ABLATION.template.md](ABLATION.template.md).
 
 Individual arms can be run by hand:
 
@@ -108,6 +129,7 @@ reproduces exactly one measurement:
 | `check_error_structure.py` | 4% of lines are wrong identically every time; 0.47 is the resampling ceiling |
 | `check_restatements.py` | why the restatement-agreement component was removed |
 | `check_model_sensitivity.py` | the answers depend on the model's output |
+| `build_ablation.py` | assembles `ABLATION.md` from the template and the two result tables |
 
 `refparse.py` is regex over the visible phrasing pool and is used **only** for
 measurement — to pin down the generator's semantics and to test the solver
