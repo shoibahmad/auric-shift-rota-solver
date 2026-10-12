@@ -95,11 +95,11 @@ instead of a minimal core scores **0.00** on all 20 inconsistent items. Citing
 more is not safer, it is disqualifying.
 
 On the citation diagnostics: the system never declares `inconsistent` and cites
-nothing — `verify.py` fails the run if it does — so `conflict_coverage` (0.85 on
-the last 3× run) is bounded purely by how often the kind is called right, not by
-silence. Cited sets are slightly *leaner* than the key's smallest cores, 3.0
-statements and 186 characters against 3.5 and 203, so neither bloat bound is in
-play. `containment_rankable` reads `False` on the shipped key for a structural
+nothing — `verify.py` fails the run if it does — so `conflict_coverage`
+(0.65–0.85 over twelve runs, mean 0.75) is bounded purely by how often the kind
+is called right, not by silence. Cited sets are slightly *leaner* than the key's
+smallest cores — 2.4–3.0 statements and ~160 characters against 3.5 and 203 —
+so neither bloat bound is in play. `containment_rankable` reads `False` on the shipped key for a structural
 reason, not a scoring one: the candidate's copy records no `injected_line`, so
 `inj_known` is zero for every item.
 
