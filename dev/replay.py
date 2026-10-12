@@ -3,7 +3,7 @@
 Five of the ten ablation arms change only code that runs *after* the model has
 spoken: `mus`, `calib`, `softneg`, `recover`, `strict`. For those, a live
 re-run is strictly worse evidence than a replay -- it pays for new calls and
-then adds sampling noise on top, and at temperature 1.0 that noise (±0.05
+then adds sampling noise on top, and at temperature 1.0 that noise (+/-0.05
 macro, and 0.15 between individual passes) is larger than several of the
 effects being measured.
 
@@ -25,7 +25,13 @@ from rota.solver import Problem                                     # noqa: E402
 from rota import pipeline as P                                      # noqa: E402
 from score import score                                             # noqa: E402
 
-SYMBOLIC_ARMS = ["full", "-mus", "-calib", "-softneg", "-recover", "-strict"]
+# The fifth arm drops both free repairs at once, to check whether their solo
+# deltas can be added. They can: -0.021 and -0.058 separately, -0.079
+# together, so the two act on disjoint sets of items despite both being
+# triggered by an implausible world count. Measured, not assumed -- the
+# expectation going in was that they would overlap.
+SYMBOLIC_ARMS = ["full", "-mus", "-calib", "-softneg",
+                 "-calib,-softneg", "-recover", "-strict"]
 
 
 def replay(items, log, comps):
@@ -65,7 +71,8 @@ def replay(items, log, comps):
 def comps_for(arm):
     c = dict(P.DEFAULT_COMPONENTS)
     if arm != "full":
-        c[arm.lstrip("-")] = False
+        for name in arm.split(","):
+            c[name.strip().lstrip("-")] = False
     return c
 
 
@@ -97,7 +104,7 @@ if __name__ == "__main__":
             delta = "--"
         else:
             delta = f"{m - base:+.3f}"
-        spread = f" ± {sd:.3f}" if len(macros) > 1 else ""
+        spread = f" +/- {sd:.3f}" if len(macros) > 1 else ""
         print(f"| `{arm}` | {m:.3f}{spread} | {avg['unique']:.2f} | "
               f"{avg['ambiguous']:.2f} | {avg['inconsistent']:.2f} | {delta} |")
     print(f"\nlogs: {', '.join(os.path.basename(p) for p in logs)}")

@@ -53,8 +53,25 @@ def run(items, budget, comps, workers=8, log=None, progress=True, fmt=None):
         except Exception as exc:                            # noqa: BLE001
             # A crash on one item must not cost the other 59. An empty unique
             # claim is a wrong answer, which is what a crash deserves.
+            #
+            # But it must still be a wrong answer that can be GRADED: an item
+            # answered with no model call at all is an auto-fail, not a zero.
+            # Everything that could throw before the first call -- header
+            # parsing above all -- would otherwise take the whole submission
+            # down with it, so if this item has not been called for yet, call
+            # now and keep the run valid.
+            if client.used(item["id"]) == 0:
+                try:
+                    client.chat(item["id"],
+                                [{"role": "user",
+                                  "content": item.get("text", "")[:4000]
+                                  + "\n\nName the people on this rota."}],
+                                max_tokens=64)
+                except Exception:                           # noqa: BLE001
+                    pass
             a = {"case": "unique", "assignment": {}}
-            tr = {"case": "error", "error": repr(exc), "calls": 0}
+            tr = {"case": "error", "error": repr(exc),
+                  "calls": client.used(item["id"])}
         done[0] += 1
         if progress:
             sys.stderr.write(f"\r  {done[0]}/{len(items)} items"

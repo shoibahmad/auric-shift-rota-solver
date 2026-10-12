@@ -35,6 +35,18 @@ Scoring, with the provided scorer:
 python3 score.py visible_key.json answers.json
 ```
 
+Before trusting a run, check the things that are auto-fails rather than low
+scores — output format, citations occurring verbatim and quoting exactly one
+line each, every assignment naming the whole rota, and the budget holding in
+both directions:
+
+```bash
+./run items.json --budget 3x --out answers.json --trace trace.json
+python3 verify.py items.json answers.json --trace trace.json
+```
+
+A sample of actual output, one run per budget, is in [results/](results/).
+
 ### Call settings and the budget
 
 Every model call goes through `rota/client.py`, which is the only place that
@@ -76,10 +88,29 @@ Individual arms can be run by hand:
 | [rota/client.py](rota/client.py) | the only call site: pinned sampling, `X-Item-Id`, budget cap |
 | [rota/main.py](rota/main.py) | CLI, parallelism, budget reporting |
 | [ablate.py](ablate.py) | reproduces the ablation table |
+| [verify.py](verify.py) | pre-flight checks for the four auto-fail conditions |
 | [dev/](dev/) | characterisation probes and measurements; not part of the pipeline |
 
 `dev/` is kept because the writeup's claims come from it, and each script
-reproduces one measurement. `dev/refparse.py` is a regex reference parser over
-the *visible* phrasing pool, used to pin down the generator's semantics and to
-test the solver against the key without spending a model call. It is not
-reachable from `rota/`.
+reproduces exactly one measurement:
+
+| script | the claim it establishes |
+|---|---|
+| `probe_model.py` | the model cannot do the task end to end, and is near-perfect at spotting inert lines |
+| `refparse.py` | a regex reference parser over the *visible* pool, for per-line ground truth |
+| `check_semantics.py` | reference parser + solver = macro 1.0000, so the symbolic layer is correct |
+| `check_entailment.py` | over-reading wishes is free (64/64 entailed), past-tense station history is not (0/25) |
+| `check_null_family.py` | over-reading unresolved questions is free too (31/31) |
+| `calibrate.py` | per-emitted-code precision: the `TRUST` order in `solver.py` |
+| `probe_format.py`, `probe_format2.py` | reply-format variants; how the preamble was stopped |
+| `replay.py` | the symbolic ablation arms, over fixed extractions, with no sampling noise |
+| `tune_aggregation.py` | every way of combining extractions loses to selecting one |
+| `check_error_structure.py` | 4% of lines are wrong identically every time; 0.47 is the resampling ceiling |
+| `check_restatements.py` | why the restatement-agreement component was removed |
+| `check_model_sensitivity.py` | the answers depend on the model's output |
+
+`refparse.py` is regex over the visible phrasing pool and is used **only** for
+measurement — to pin down the generator's semantics and to test the solver
+against the key without spending a model call. It is not reachable from
+`rota/`, and the held-out set's disjoint phrasing is exactly why the answering
+pipeline does not work that way.

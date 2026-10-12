@@ -157,7 +157,7 @@ def main():
             elif m == "skipped":
                 cells.append("--")
             elif a.runs > 1:
-                cells.append(f"{statistics.mean(m):.3f} ± "
+                cells.append(f"{statistics.mean(m):.3f} +/- "
                              f"{statistics.pstdev(m):.3f}")
             else:
                 cells.append(f"{m[0]:.3f}")
