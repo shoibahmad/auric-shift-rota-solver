@@ -9,13 +9,31 @@ which is the point of having both.
   extractions, with no new model calls. Same model output for every arm, so
   the comparison carries no sampling noise at all.
 
-The replay table exists because of a measurement, not a preference:
-**run-to-run spread at `temperature=1.0` is ±0.04 to 0.10 macro on 60 items**,
-which is larger than several of the effects being ablated. Three individual
-extractions of the same item scored 0.533 / 0.400 / 0.550 on one log and
-0.483 / 0.417 / 0.517 / 0.433 / 0.417 on another. Any single-run difference
-below about 0.05 in the live table should be read as noise; the replay table
-is where the small effects are actually resolved.
+### What "reproduces" means here
+
+Over **27 runs of the unmodified pipeline** (`dev/summarise_runs.py`), the
+full system measures:
+
+| budget | n | mean | SD | observed range |
+|---|---|---|---|---|
+| 1x | 9 | 0.469 | 0.041 | 0.417 - 0.533 |
+| 3x | 9 | 0.504 | 0.043 | 0.450 - 0.583 |
+| 10x | 9 | 0.504 | 0.034 | 0.450 - 0.550 |
+
+**A single re-run should be expected to land in the observed range, not on the
+mean.** That spread is a property of `temperature=1.0` on a 60-item set, not
+of the system: the three-run cells below were sampled from exactly these
+distributions, and re-running one cell once can easily move it 0.05. The
+conclusions that survive this noise are the large ones -- the formal layer is
+worth everything, minimal-core citation is worth the whole inconsistent
+stratum, the free repairs beat the paid ones -- and those are the ones the
+commentary draws.
+
+The replay table exists for the same reason. Three individual extractions of
+the same item scored 0.533 / 0.400 / 0.550 on one log and 0.483 / 0.417 /
+0.517 / 0.433 / 0.417 on another, which is larger than several of the effects
+being ablated. Replaying a *fixed* extraction removes that noise entirely, so
+the small effects are resolved there rather than in the live table.
 
 ## Reproducing
 

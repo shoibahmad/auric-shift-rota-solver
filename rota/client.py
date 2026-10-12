@@ -20,6 +20,12 @@ from openai import OpenAI
 DEFAULT_BASE_URL = "https://openrouter.ai/api/v1"
 DEFAULT_MODEL = "ibm-granite/granite-4.2-8b"
 
+# Per-HTTP-attempt budget. Extraction replies are a few hundred tokens, so a
+# request still running after this is hung rather than slow. With four
+# attempts and the back-off below, one logical call is bounded at about three
+# minutes instead of being unbounded.
+REQUEST_TIMEOUT = 90.0
+
 
 def load_env(path=".env"):
     """Minimal .env reader. No dependency, and no surprise about precedence:
@@ -52,7 +58,13 @@ class ModelClient:
         if not key:
             raise RuntimeError(
                 "No API key. Put OPENROUTER_API_KEY in .env (see .env.example).")
-        self.client = OpenAI(base_url=self.base_url, api_key=key, timeout=180.0)
+        # max_retries=0 on purpose. The SDK retries internally by default
+        # (twice), and the loop in chat() retries too, so the two layers
+        # multiply: 4 outer attempts x 3 inner x a 180s timeout is a 36-minute
+        # worst case for a single logical call. A stalled run during
+        # validation took exactly that long. One retry layer, here, bounded.
+        self.client = OpenAI(base_url=self.base_url, api_key=key,
+                             timeout=REQUEST_TIMEOUT, max_retries=0)
         self.budget = int(budget)
         self.temperature = temperature
         self.top_p = top_p

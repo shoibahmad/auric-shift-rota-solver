@@ -259,7 +259,11 @@ required = {
     "where it breaks": "where it breaks" in w,
     "what you would do with a month": "with a month" in w,
     "different writers / phrasing transfer": "written by people" in w,
-    "how many runs each number came from": "three runs" in w,
+    # phrasing-independent: the brief asks for the run count to be stated,
+    # so look for any statement of one rather than one particular wording
+    "how many runs each number came from": any(
+        t in w for t in ("runs per budget", "runs each", "three runs",
+                         "nine runs", "runs per cell", "n=9")),
 }
 for label, ok in required.items():
     check(ok, f"writeup covers: {label}")

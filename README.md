@@ -11,14 +11,16 @@ enumerating the 720 possible worlds of an item and reasoning over the set.
 - **Everything downstream is symbolic**: world enumeration, case decision, and
   minimal-unsatisfiable-subset search for the citations.
 
-| budget | macro exact match | per-kind (u / a / i) |
-|---|---|---|
-| 1x | **0.467 +/- 0.036** | 0.42 / 0.38 / 0.60 |
-| 3x | **0.506 +/- 0.028** | 0.50 / 0.47 / 0.55 |
-| 10x | **0.522 +/- 0.016** | 0.52 / 0.45 / 0.60 |
-| the same model with no formal layer | **0.000 +/- 0.000** | 0.00 / 0.00 / 0.00 |
+| budget | macro exact match (n=9) | observed range | per-kind (u / a / i) |
+|---|---|---|---|
+| 1x | **0.469 +/- 0.041** | 0.417 - 0.533 | 0.42 / 0.38 / 0.60 |
+| 3x | **0.504 +/- 0.043** | 0.450 - 0.583 | 0.50 / 0.47 / 0.55 |
+| 10x | **0.504 +/- 0.034** | 0.450 - 0.550 | 0.52 / 0.45 / 0.60 |
+| the same model with no formal layer | **0.000 +/- 0.000** | - | 0.00 / 0.00 / 0.00 |
 
-Three runs each, provided scorer, `visible_key.json`. See
+Nine runs per budget, provided scorer, `visible_key.json`. A single re-run
+lands anywhere in the observed range, not on the mean -- the spread is a
+property of `temperature=1.0`, not of the system. See
 [WRITEUP.md](WRITEUP.md) for how the model was characterised, why each
 component exists, what was removed, and where the system breaks --
 including why the curve is nearly flat.
@@ -130,6 +132,9 @@ reproduces exactly one measurement:
 | `check_restatements.py` | why the restatement-agreement component was removed |
 | `check_model_sensitivity.py` | the answers depend on the model's output |
 | `build_ablation.py` | assembles `ABLATION.md` from the template and the two result tables |
+| `measure_variance.py` | run-to-run spread of the full system, which bounds every other claim |
+| `summarise_runs.py` | pools every run into the n=9 headline figures |
+| `validate_submission.py` | 77 checks against the brief, incl. headers and sampling on an intercepted request |
 
 `refparse.py` is regex over the visible phrasing pool and is used **only** for
 measurement — to pin down the generator's semantics and to test the solver

@@ -5,17 +5,25 @@ translates each into one constraint or into nothing; nothing in the answering
 pipeline pattern-matches the notes. Everything after extraction — the kind, the
 consistent assignments, the localised contradiction — is symbolic and exact.
 
-| budget | macro | per-kind (u / a / i) | calls/item |
-|---|---|---|---|
-| **1×** | **0.467 ± 0.036** | 0.42 / 0.38 / 0.60 | 1 – 1 |
-| **3×** | **0.506 ± 0.028** | 0.50 / 0.47 / 0.55 | 2 – 3 |
-| **10×** | **0.522 ± 0.016** | 0.52 / 0.45 / 0.60 | 3 – 10 |
-| no formal layer (`-solver`) | **0.000 ± 0.000** | 0.00 / 0.00 / 0.00 | 1 – 1 |
+| budget | macro (n=9) | observed range | per-kind (u / a / i) | calls/item |
+|---|---|---|---|---|
+| **1×** | **0.469 ± 0.041** | 0.417 – 0.533 | 0.42 / 0.38 / 0.60 | 1 – 1 |
+| **3×** | **0.504 ± 0.043** | 0.450 – 0.583 | 0.50 / 0.47 / 0.55 | 2 – 3 |
+| **10×** | **0.504 ± 0.034** | 0.450 – 0.550 | 0.52 / 0.45 / 0.60 | 2 – 10 |
+| no formal layer (`-solver`) | **0.000 ± 0.000** | 0.000 – 0.000 | 0.00 / 0.00 / 0.00 | 1 – 1 |
 
-Three runs each, mean ± population SD, provided scorer. The last row is the
-brief's 0.0% reproduced: same model, same call, no symbolic layer. Tables and
-per-kind confusion matrices in [ABLATION.md](ABLATION.md); each measurement
-below names the `dev/` script that produces it.
+**Nine runs per budget**, mean ± population SD, provided scorer
+(`dev/summarise_runs.py` pools the ablation, variance and end-to-end runs).
+The last row is the brief's 0.0% reproduced: same model, same call, no
+symbolic layer.
+
+The curve is the honest part. One call buys 0.469; a third call buys another
+0.035; **the seven calls after that buy nothing at all** — 3× and 10× have
+the same mean to three decimals, and the gap is an order of magnitude smaller
+than the run-to-run spread either side of it. §4 explains why, with the
+measurement that bounds it. Per-kind confusion matrices and the full ablation:
+[ABLATION.md](ABLATION.md); each measurement below names the `dev/` script
+that produces it.
 
 ## 1. Characterising the model first
 
@@ -174,7 +182,8 @@ this model and this prompt, and the system is already sitting on it at 1×. The
 budget is not the binding constraint.
 
 Three specific failures. **Under-extraction on unique items** is the largest
-bucket, 7–8 of 20 declared ambiguous: one constraint missed, count 2–4, and
+bucket — 9 of 20 declared ambiguous at 1×, still 7.7 at 10×: one
+constraint missed, count 2–4, and
 nothing in the formal layer separates "genuinely ambiguous" from "one constraint
 short", so no trigger fires. **The relative-to-absolute collapse** does the most
 damage per occurrence; when it yields a *plausible* core the system cites a
@@ -183,7 +192,7 @@ off the brief, which states the second as a property of *this* set; a
 two-statement conflict in the held-out set would be dissolved by `calib`.
 
 **The paid mechanisms are not clearly positive, and the ablation says so.**
-`-vote` at 3× scores **0.539 against the full system's 0.506** — switching off
+`-vote` at 3× scores **0.539 against the full system's 0.504** — switching off
 re-extraction-and-selection *improves* three-call performance — while at ten
 calls the same removal costs 0.044. `-repair` costs 0.017 at 3× and 0.016 at
 10×. I have not re-tuned the trigger on this: the 3× gap is 0.033 against a
@@ -196,13 +205,15 @@ they chase are the systematic ones that resampling cannot reach. By contrast
 the two *free* repairs cost 0.022 and 0.033 to remove, more than either paid
 mechanism, for no calls at all.
 
-**Variance is large and not hidden.** The same configuration moves ±0.04 to 0.10
-macro between runs, and individual passes of one item range 0.400–0.550. Every
-ablation number is a three-run mean with spread, and the symbolic arms are
-*additionally* measured by replay over four fixed extractions, so those
-comparisons carry no sampling noise. No single-run difference below ~0.05 is a
-real effect — which is also why the `-vote` result above is reported rather than
-acted on.
+**Variance is large and not hidden.** Over 27 runs of the unmodified pipeline
+the per-budget SD is 0.034–0.043 and a single run lands anywhere in
+0.417–0.583; individual extraction passes of *one item* range 0.400–0.550.
+A grader re-running once should expect to land in that range, not on the mean.
+Every ablation number is a three-run mean with spread, the headline curve is
+nine runs, and the symbolic arms are *additionally* measured by replay over
+four fixed extractions so those comparisons carry no sampling noise at all.
+No single-run difference below about 0.05 is a real effect — which is also
+why the `-vote` result above is reported rather than acted on.
 
 ## 5. If the notes were written by people
 
