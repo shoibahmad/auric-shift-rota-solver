@@ -67,22 +67,24 @@ returned), none `inconsistent`, and the citation is a minimal unsatisfiable
 subset found by deletion — *definitionally* the scorer's rule, not an
 approximation of it.
 
-**`calib`, the calibrated drop (−0.022 live, −0.021 replayed; no model call).** The brief says every
-conflicting set here has ≥3 statements and the key agrees (smallest cores: 13 of
-size 3, 4 of size 4, 3 of size 5, **none of size 2**). So an extraction whose
+**`calib`, the calibrated drop** (−0.022 live, −0.021 replayed; no model
+call). The brief says every conflicting set here has at least 3 statements and
+the key agrees (smallest cores: 13 of size 3, 4 of size 4, 3 of size 5, **none
+of size 2**). So an extraction whose
 smallest core has two statements is provably not reporting a conflict the notes
 contain — wrong whichever kind the item is — so there is nothing to lose by
 disbelieving one of the two, and the precision table says which.
 
-**`softneg`, soft negatives (−0.033 live, −0.058 replayed; no model call).** A line read as inert that
-names exactly one person and one clock time is tried as a negative block claim,
+**`softneg`, soft negatives** (−0.033 live, −0.058 replayed; no model call). A
+line read as inert that names exactly one person and one clock time is tried as
+a negative block claim,
 kept only if it removes worlds and leaves one. Safe *because* of the entailment
 measurements above. The two free repairs are **additive, not overlapping**
 (−0.079 together); I expected overlap and was wrong.
 
-**`mus` (−0.167 live, −0.187 replayed).** Citing every constraining line
-instead of a minimal core scores **0.00** on all 20 inconsistent items. Citing more is not safer,
-it is disqualifying.
+**`mus`** (−0.167 live, −0.187 replayed). Citing every constraining line
+instead of a minimal core scores **0.00** on all 20 inconsistent items. Citing
+more is not safer, it is disqualifying.
 
 **`repair`.** The world count is a proof of extraction error needing no key, so
 budget is spent only where it says something is wrong and only on the lines
