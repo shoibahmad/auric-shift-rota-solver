@@ -6,8 +6,22 @@ the answering pipeline pattern-matches the notes. Everything after extraction �
 deciding the kind, enumerating the consistent assignments, localising a
 contradiction — is symbolic and exact.
 
-Headline curve and full ablation: [ABLATION.md](ABLATION.md). Every
+| budget | macro exact match | per-kind (u / a / i) | calls per item |
+|---|---|---|---|
+| **1×** | **0.467 ± 0.036** | 0.42 / 0.38 / 0.60 | 1 – 1 |
+| **3×** | **0.506 ± 0.028** | 0.50 / 0.47 / 0.55 | 2 – 3 |
+| **10×** | **0.522 ± 0.016** | 0.52 / 0.45 / 0.60 | 3 – 10 |
+| no formal layer (`-solver`) | **0.000 ± 0.000** | 0.00 / 0.00 / 0.00 | 1 – 1 |
+
+Three runs per row, mean ± population SD, scored with the provided `score.py`
+against `visible_key.json`. The bottom row is the brief's 0.0% baseline,
+reproduced: the same model, the same call, no symbolic layer. Full ablation and
+the per-kind confusion matrices: [ABLATION.md](ABLATION.md). Every
 characterisation figure below comes from one script in `dev/`, named inline.
+
+The curve's shape is the honest part of this submission: **most of the result
+is already there at one call per item**, and the remaining budget buys about
+five points. §4 explains why, with the measurement that bounds it.
 
 ## 1. Characterising the model first
 
@@ -90,19 +104,24 @@ extraction whose smallest core has two statements is *provably not reporting a
 conflict the notes contain* — the answer built on it is wrong whichever kind the
 item really is, so there is nothing to lose by disbelieving one of the two. The
 precision table says which to drop. Eight such cases arose on one run and five
-were truly ambiguous items destroyed by a single invented constraint. It costs
-**no model call**.
+were truly ambiguous items destroyed by a single invented constraint. Worth
+**−0.021** when removed, and it costs **no model call**.
 
 **`softneg` — soft negatives.** The mirror image, also free. A line read as
 asserting nothing that nonetheless names exactly one person and exactly one
 clock time is tried as a negative block claim, kept only if it removes worlds
 and leaves at least one. It is safe *because* of the entailment measurements
 above: no padding line in this task mentions a clock time, and the two inert
-families that do are entailed as negatives anyway.
+families that do are entailed as negatives anyway. Worth **−0.058**, also for
+no call. The two free repairs turn out to be **additive**, not overlapping:
+−0.079 when both are removed, against −0.021 and −0.058 alone. I had expected
+them to overlap, since both are triggered by an implausible world count; they
+act on disjoint sets of items.
 
 **`mus` — minimal-core citation.** Not optional in any sense. With it the
 inconsistent stratum scores 0.56; citing every constraining line instead scores
-**0.00**. Citing more is not safer, it is disqualifying.
+**0.00** — the whole stratum, **−0.187** of macro. Citing more is not safer, it
+is disqualifying.
 
 **The reply format turned out to be a component in disguise.** The model's
 dominant failure at full item length is not a wrong code — it is derailing into
