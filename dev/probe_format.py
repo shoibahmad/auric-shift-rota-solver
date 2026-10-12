@@ -18,6 +18,12 @@ from rota.extract import (parse_header, body_lines, build_prompt,
                           parse_codes)                                # noqa: E402
 from rota.solver import Problem                                       # noqa: E402
 
+# Model output can contain any character; the Windows console codepage
+# cannot. Printing a raw reply must not crash a measurement script.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:  # noqa: BLE001
+    pass
 ITEMS = {i["id"]: i for i in json.load(open("items.json", encoding="utf-8"))}
 TARGETS = ["B2-000", "B2-011", "B2-002", "B2-004", "B2-007", "B2-013"]
 

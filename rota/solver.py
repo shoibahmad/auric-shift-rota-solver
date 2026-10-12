@@ -62,6 +62,41 @@ class Problem:
             dict(zip(self.holders, p)) for p in permutations(self.stations)
         ]
 
+    # -- vocabulary canonicalisation ---------------------------------------
+    def canon(self, tok, kind):
+        """The item's own spelling of `tok`, or None if it names nothing.
+
+        Matching is case-insensitive but the value returned is always the
+        string the header used, because the scorer compares names, blocks and
+        stations with exact, case-sensitive equality. This is normalisation,
+        not fuzzy matching: a token either denotes something in this item's
+        vocabulary or it is dropped.
+
+        It exists because of a transfer bug the visible set hides. Station
+        names happen to be lower-case in every visible header, and the
+        extractor lower-cases the station token it reads, so the two matched
+        by luck. A held-out header writing `Intake` instead of `intake` would
+        have failed validation on *every* station constraint and silently
+        deleted the entire station half of the problem.
+        """
+        if tok is None:
+            return None
+        pool = {"person": self.people, "block": self.blocks,
+                "station": self.stations}[kind]
+        if tok in pool:
+            return tok
+        folded = {v.casefold(): v for v in pool}
+        hit = folded.get(str(tok).casefold())
+        if hit is not None:
+            return hit
+        if kind == "block":
+            # "9:00" for "09:00" is a realistic slip and is unambiguous
+            t = str(tok).strip()
+            for v in pool:
+                if v.lstrip("0") == t.lstrip("0"):
+                    return v
+        return None
+
     # -- constraint validation ---------------------------------------------
     def valid(self, c):
         """Is this a well-formed constraint over THIS item's vocabulary?

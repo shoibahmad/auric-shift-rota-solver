@@ -25,6 +25,12 @@ from rota.solver import Problem                                     # noqa: E402
 from rota import pipeline as P                                      # noqa: E402
 from score import score                                             # noqa: E402
 
+# Model output can contain any character; the Windows console codepage
+# cannot. Printing a raw reply must not crash a measurement script.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:  # noqa: BLE001
+    pass
 # The fifth arm drops both free repairs at once, to check whether their solo
 # deltas can be added. They can: -0.021 and -0.058 separately, -0.079
 # together, so the two act on disjoint sets of items despite both being

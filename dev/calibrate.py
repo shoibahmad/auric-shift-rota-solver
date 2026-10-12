@@ -17,6 +17,12 @@ from dev.refparse import parse_item                               # noqa: E402
 from rota.extract import parse_header, body_lines, parse_codes    # noqa: E402
 from rota.solver import Problem                                   # noqa: E402
 
+# Model output can contain any character; the Windows console codepage
+# cannot. Printing a raw reply must not crash a measurement script.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:  # noqa: BLE001
+    pass
 log = json.load(open(sys.argv[1], encoding="utf-8"))
 items = {i["id"]: i for i in json.load(open("items.json", encoding="utf-8"))}
 

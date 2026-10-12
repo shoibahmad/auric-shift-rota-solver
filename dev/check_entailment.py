@@ -14,6 +14,12 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from dev.refparse import parse_item                      # noqa: E402
 from rota.solver import Problem                          # noqa: E402
 
+# Model output can contain any character; the Windows console codepage
+# cannot. Printing a raw reply must not crash a measurement script.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:  # noqa: BLE001
+    pass
 items = json.load(open("items.json"))
 key = json.load(open("visible_key.json"))
 

@@ -22,9 +22,15 @@ import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from dev.replay import replay                                      # noqa: E402
+from dev.replay import replay, comps_for                           # noqa: E402
 from score import score                                            # noqa: E402
 
+# Model output can contain any character; the Windows console codepage
+# cannot. Printing a raw reply must not crash a measurement script.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:  # noqa: BLE001
+    pass
 LINE = re.compile(r"^(\s*\**\s*\d{1,3}\s*[.):\-]\s*)(.+?)\s*$")
 FLIP = [("NOT_BLOCK", "\x00"), ("BLOCK", "NOT_BLOCK"), ("\x00", "BLOCK"),
         ("NOT_STATION", "\x01"), ("STATION_EARLIER", "\x02"),
@@ -67,10 +73,11 @@ if __name__ == "__main__":
     items = json.load(open("items.json", encoding="utf-8"))
     key = json.load(open("visible_key.json", encoding="utf-8"))
 
-    base = replay(items, log, 1, 1, 1, 1)
+    comps = comps_for("full")
+    base = replay(items, log, comps)
     print(f"{'perturbation':12s} {'macro':>7s}  {'items whose answer changed':>26s}")
     for mode in ("real", "blanked", "shuffled", "negated"):
-        sub = replay(items, perturb(log, mode), 1, 1, 1, 1)
+        sub = replay(items, perturb(log, mode), comps)
         r = score(key, sub, items)
         diff = sum(1 for k in base if json.dumps(base[k], sort_keys=True)
                    != json.dumps(sub.get(k), sort_keys=True))

@@ -325,33 +325,48 @@ def parse_one(code, problem):
     head = toks[0].upper().rstrip(":")
     args = toks[1:]
 
+    # Every token is resolved to the item's own spelling before validation,
+    # so a code is accepted on what it denotes rather than on how it was
+    # capitalised, and the constraint always carries the header's string --
+    # which is what the scorer compares, case-sensitively.
+    def P_(t):
+        return problem.canon(t, "person")
+
+    def B_(t):
+        return problem.canon(t, "block")
+
+    def S_(t):
+        return problem.canon(t, "station")
+
     def fin(c):
-        return c if problem.valid(c) else None
+        return c if all(x is not None for x in c) and problem.valid(c) else None
 
     if head == "MIDDLE":
         words = [a for a in args if a.upper() not in ("BETWEEN", "AND", "&")]
-        return fin(("between",) + tuple(words[:3])) if len(words) >= 3 else None
+        if len(words) < 3:
+            return None
+        return fin(("between",) + tuple(P_(w) for w in words[:3]))
     if len(args) < 2:
         return None
     a, b = args[0], args[1]
     if head == "BLOCK":
-        return fin(("block", a, b))
+        return fin(("block", P_(a), B_(b)))
     if head in ("NOT_BLOCK", "NOTBLOCK", "NO_BLOCK"):
-        return fin(("nblock", a, b))
+        return fin(("nblock", P_(a), B_(b)))
     if head == "STATION":
-        return fin(("station", a, b.lower()))
+        return fin(("station", P_(a), S_(b)))
     if head in ("NOT_STATION", "NOTSTATION", "NO_STATION"):
-        return fin(("nstation", a, b.lower()))
+        return fin(("nstation", P_(a), S_(b)))
     if head == "EARLIER":
-        return fin(("before", a, b))
+        return fin(("before", P_(a), P_(b)))
     if head in ("NEXT", "IMM", "IMMEDIATE"):
-        return fin(("imm", a, b))
+        return fin(("imm", P_(a), P_(b)))
     if head in ("STATION_EARLIER", "STATIONEARLIER", "SBEFORE"):
-        # tolerate the two argument orders: the station is whichever token is
-        # a station name, so a swap is recoverable without guessing.
-        if a.lower() in problem.stations:
-            return fin(("sbefore", a.lower(), b))
-        if b.lower() in problem.stations:
-            return fin(("sbefore", b.lower(), a))
+        # tolerate the two argument orders: the station is whichever token
+        # names one, so a swap is recoverable without guessing.
+        if S_(a) is not None:
+            return fin(("sbefore", S_(a), P_(b)))
+        if S_(b) is not None:
+            return fin(("sbefore", S_(b), P_(a)))
         return None
     return None

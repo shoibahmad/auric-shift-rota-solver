@@ -12,6 +12,12 @@ from dev.refparse import parse_item                      # noqa: E402
 from rota.solver import Problem, mus                     # noqa: E402
 from score import score                                  # noqa: E402
 
+# Model output can contain any character; the Windows console codepage
+# cannot. Printing a raw reply must not crash a measurement script.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:  # noqa: BLE001
+    pass
 
 def oracle_answers(items, include):
     out = {}

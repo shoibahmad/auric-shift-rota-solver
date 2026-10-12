@@ -23,6 +23,12 @@ from rota.solver import Problem                                     # noqa: E402
 from rota import pipeline as P                                      # noqa: E402
 from score import score                                             # noqa: E402
 
+# Model output can contain any character; the Windows console codepage
+# cannot. Printing a raw reply must not crash a measurement script.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:  # noqa: BLE001
+    pass
 COMPS = dict(P.DEFAULT_COMPONENTS)
 
 

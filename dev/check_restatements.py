@@ -28,6 +28,12 @@ import sys
 sys.path.insert(0, ".")
 from score import squash_stmt                                     # noqa: E402
 
+# Model output can contain any character; the Windows console codepage
+# cannot. Printing a raw reply must not crash a measurement script.
+try:
+    sys.stdout.reconfigure(encoding="utf-8", errors="replace")
+except Exception:  # noqa: BLE001
+    pass
 items = json.load(open("items.json", encoding="utf-8"))
 ident = 0
 same_names = collections.Counter()
