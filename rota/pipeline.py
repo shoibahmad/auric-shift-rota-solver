@@ -21,7 +21,7 @@ import collections
 
 from .extract import (parse_header, body_lines, build_prompt, parse_codes,
                       parse_one)
-from .solver import Problem, mus
+from .solver import Problem, mus, pick_core, least_trusted, trust
 
 AMBIG_MAX = 4          # the brief: an ambiguous item has two to four worlds
 RENDER_CAP = 24        # keep answers.json sane when extraction collapses
@@ -34,7 +34,13 @@ DEFAULT_COMPONENTS = {
     "vote": True,       # self-consistency over repeated extractions
     "repair": True,     # count-triggered targeted re-reads
     "mus": True,        # minimal core citation (vs citing every constraint)
+    "calib": True,      # drop a distrusted constraint when the core is too
+                        # small to be a real conflict -- free, no model call
 }
+
+# Reply shape. Not a component -- it is one choice with three settings, kept
+# out of the on/off component dict so the ablation arms stay boolean.
+FMT = "dash"
 
 
 def merge_votes(passes, n_lines):
@@ -89,9 +95,9 @@ class Solved:
         self.trace = trace
 
 
-def _extract_pass(client, item_id, prob, lines, comps, focus=None):
+def _extract_pass(client, item_id, prob, lines, comps, focus=None, fmt=None):
     msgs = build_prompt(prob.people, prob.blocks, prob.stations, prob.holders,
-                        lines, focus=focus)
+                        lines, focus=focus, fmt=fmt or FMT)
     if not comps["rules"]:
         msgs = _strip_rules(msgs)
     # generous: a single derailed line must not cost the tail of the list
@@ -141,6 +147,36 @@ def _lenient(raw, have, prob):
     return extra
 
 
+MIN_CORE = 3           # the brief: every conflicting set here has >= 3 lines
+
+
+def _calibrated_drop(prob, cons, tries=3):
+    """Free repair for a contradiction that is too small to be real.
+
+    An unsatisfiable extraction is either a real contradiction in the notes or
+    an invented constraint. One signal separates them without spending a call:
+    the size of the smallest conflicting set. Every conflicting set in this
+    task has at least three statements in it, so a two-statement core is not a
+    conflict the notes contain -- it is two readings of the notes colliding,
+    and the answer built on it is wrong whichever case the item really is.
+    There is therefore nothing to lose by disbelieving one of the two, and the
+    one to disbelieve is the one from the code kind the extractor is measured
+    to get wrong most often.
+    """
+    cur = dict(cons)
+    dropped = []
+    for _ in range(tries):
+        indexed = [(i, cur[i]) for i in sorted(cur)]
+        if prob.sat([c for _k, c in indexed]):
+            break
+        core = mus(prob, indexed)
+        if not core or len(core) >= MIN_CORE:
+            break
+        victim = least_trusted(core, dict(indexed))
+        dropped.append((victim, cur.pop(victim)))
+    return cur, dropped
+
+
 def _recover(raw, cons, prob, lines):
     """Free repair, no model call: when the extraction is under-constrained,
     re-parse the codes the strict parser dropped and keep only the ones that
@@ -159,9 +195,10 @@ def _recover(raw, cons, prob, lines):
     return best
 
 
-def solve_item(item, client, budget, comps=None, want_trace=False):
+def solve_item(item, client, budget, comps=None, want_trace=False, fmt=None):
     """Answer one item inside its call budget."""
     comps = {**DEFAULT_COMPONENTS, **(comps or {})}
+    fmt = fmt or FMT
     iid = item["id"]
     people, blocks, stations, holders = parse_header(item["text"])
     lines = body_lines(item["text"])
@@ -171,7 +208,7 @@ def solve_item(item, client, budget, comps=None, want_trace=False):
     if not comps["solver"]:
         return _no_solver(item, client, prob, lines, comps)
 
-    cons, raw = _extract_pass(client, iid, prob, lines, comps)
+    cons, raw = _extract_pass(client, iid, prob, lines, comps, fmt=fmt)
     passes = [cons]
     worlds = prob.solve(list(cons.values()))
     trace.append(("extract", len(cons), len(worlds)))
@@ -180,6 +217,12 @@ def solve_item(item, client, budget, comps=None, want_trace=False):
         cons = _recover(raw, cons, prob, lines)
         worlds = prob.solve(list(cons.values()))
         trace.append(("recover", len(cons), len(worlds)))
+
+    if comps["calib"] and not worlds:
+        cons, dropped = _calibrated_drop(prob, cons)
+        if dropped:
+            worlds = prob.solve(list(cons.values()))
+            trace.append(("calib-drop", len(dropped), len(worlds)))
 
     # ---- spend what is left, guided by the count -------------------------
     # Budget is spent on whichever of three things the count says is wrong,
@@ -198,7 +241,8 @@ def solve_item(item, client, budget, comps=None, want_trace=False):
             if not focus:
                 break
             nf += 1
-            new, _ = _extract_pass(client, iid, prob, lines, comps, focus=focus)
+            new, _ = _extract_pass(client, iid, prob, lines, comps,
+                                   focus=focus, fmt=fmt)
             added = {i: c for i, c in new.items() if i in focus}
             if not added:
                 break
@@ -224,7 +268,8 @@ def solve_item(item, client, budget, comps=None, want_trace=False):
             core = mus(prob, indexed)
             if not core:
                 break
-            new, _ = _extract_pass(client, iid, prob, lines, comps, focus=core)
+            new, _ = _extract_pass(client, iid, prob, lines, comps,
+                                   focus=core, fmt=fmt)
             cand = dict(cons)
             changed = False
             for i in core:
@@ -240,7 +285,7 @@ def solve_item(item, client, budget, comps=None, want_trace=False):
             cons = cand
             worlds = prob.solve(list(cons.values()))
         elif comps["vote"] and len(passes) < votes_max:
-            new, _ = _extract_pass(client, iid, prob, lines, comps)
+            new, _ = _extract_pass(client, iid, prob, lines, comps, fmt=fmt)
             passes.append(new)
             merged = merge_votes(passes, len(lines))
             w2 = prob.solve(list(merged.values()))
@@ -259,7 +304,7 @@ def solve_item(item, client, budget, comps=None, want_trace=False):
         case = "inconsistent"
         idx = sorted(cons)
         indexed = [(i, cons[i]) for i in idx]
-        core = mus(prob, indexed) if comps["mus"] else idx
+        core = pick_core(prob, indexed) if comps["mus"] else idx
     else:
         case = "ambiguous"
         core = None

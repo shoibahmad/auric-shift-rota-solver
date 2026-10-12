@@ -115,7 +115,9 @@ class Problem:
             a, b, d = pos[c[1]], pos[c[2]], pos[c[3]]
             return b < a < d or d < a < b
         if k == "sbefore":
-            who = next(h for h, s in stat.items() if s == c[1])
+            who = next((h for h, s in stat.items() if s == c[1]), None)
+            if who is None:
+                return True     # no one holds it: nothing to order against
             return pos[who] < pos[c[2]]
         raise ValueError(k)
 
@@ -140,8 +142,6 @@ class Problem:
             pos = dict(zip(self.people, w))
             if all(self._holds(c, pos, None) for c in block_only):
                 poss.append(pos)
-            if not poss and not self._block_worlds:
-                break
         if not poss:
             return []
         stats = [s for s in self._station_worlds
@@ -211,8 +211,8 @@ def mus(problem, indexed, order=None):
 
 def all_muses(problem, indexed, cap=24):
     """Several distinct cores, found by sweeping deletion from different
-    starting points. Used to prefer a core the citation layer can quote
-    cleanly, not to enumerate exhaustively."""
+    starting points. Not an exhaustive enumeration -- it is here so the
+    citation layer has a choice between cores, not so it has all of them."""
     seen, out = set(), []
     n = len(indexed)
     for start in range(min(n, cap)):
@@ -225,3 +225,54 @@ def all_muses(problem, indexed, cap=24):
             seen.add(sig)
             out.append(m)
     return out
+
+
+# Measured precision of each emitted code kind -- given that the model wrote a
+# code of this kind, how often the line actually says that. From 60 items,
+# `dev/calibrate.py`, scored against the reference parser:
+#
+#   between 97%   station 94%   nstation 93%   before 92%
+#   sbefore 89%   imm 77%       nblock 74%     block 71%
+#
+# The shape is intelligible rather than arbitrary. The two absolute forms are
+# the least reliable because the model's characteristic error is to *resolve* a
+# relative statement into an absolute one -- "Rohan is on the block directly
+# after Meera" came back as `BLOCK Rohan 11:00` seven times -- and an invented
+# absolute placement eliminates far more worlds than a wrong relative one.
+# This order is used only to choose which of two colliding constraints to
+# disbelieve; it never changes how a constraint is interpreted.
+TRUST = {"between": 8, "station": 7, "nstation": 6, "before": 5,
+         "sbefore": 4, "imm": 3, "nblock": 2, "block": 1}
+
+
+def trust(c):
+    return TRUST.get(c[0], 0)
+
+
+def pick_core(problem, indexed, min_size=3):
+    """The core to cite.
+
+    Every minimal conflicting set is a correct answer, so this chooses only
+    between correct ones -- when the extraction is right. When it is not, the
+    choice matters: a two-statement core means two extracted constraints
+    collide directly, which on this task is far more often a mistranslation
+    (the same person placed on two blocks by two different readings) than a
+    contradiction the notes actually contain. The brief says every conflicting
+    set on this set has at least three statements in it, so a larger core is
+    preferred where one exists, and the smallest is the fallback.
+    """
+    cores = all_muses(problem, indexed)
+    if not cores:
+        return None
+    by_key = dict(indexed)
+    big = [c for c in cores if len(c) >= min_size]
+    pool = big or cores
+    # among cores of the same size, cite the one built from the code kinds the
+    # extractor is measured to get right most often
+    return min(pool, key=lambda c: (len(c),
+                                    -min(trust(by_key[k]) for k in c)))
+
+
+def least_trusted(indexed_core, by_key):
+    """The constraint in a core to disbelieve first."""
+    return min(indexed_core, key=lambda k: trust(by_key[k]))

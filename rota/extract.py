@@ -134,6 +134,12 @@ RULES = """RULES:
 7. Copy names, times and station words exactly as they appear. Never use a
    name that is not on the rota."""
 
+TERSE = """FORMAT:
+Your reply must begin with the two characters `1.` and must contain no
+sentence of English anywhere. Every line of your reply is at most six words
+long. Never write a question mark. Never reconsider a code once you have
+written it: write one code, then move straight on to the next number."""
+
 FEWSHOT = """EXAMPLE
 Rota: Alice, Bob, Carla, Dev, Erin. Blocks: 07:00, 09:00, 11:00, 13:00, 15:00.
 Stations: intake, calibration, packing, held by Alice, Carla, Erin.
@@ -161,6 +167,29 @@ ANSWER
 10. NONE
 END EXAMPLE"""
 
+FEWSHOT_SPARSE = """EXAMPLE
+Rota: Alice, Bob, Carla, Dev, Erin. Blocks: 07:00, 09:00, 11:00, 13:00, 15:00.
+Stations: intake, calibration, packing, held by Alice, Carla, Erin.
+1. Going off the roster, Carla is not assigned to packing.
+2. Bob keeps the sign-in sheet in the top drawer.
+3. Dev starts the moment Erin finishes, with nothing in between.
+4. Up until last week Alice had calibration.
+5. Whichever way round Bob and Dev are, Alice is between them.
+6. Whether Erin ended up with 15:00 was never settled.
+7. Alice finishes before Dev has started.
+8. I'm fairly sure the 09:00 block is Bob's.
+9. The person covering intake is on earlier than Dev.
+10. Erin pushed hard for 07:00 and was turned down.
+
+ANSWER
+1. NOT_STATION Carla packing
+3. NEXT Erin Dev
+5. MIDDLE Alice BETWEEN Bob AND Dev
+7. EARLIER Alice Dev
+8. BLOCK Bob 09:00
+9. STATION_EARLIER intake Dev
+END EXAMPLE"""
+
 
 def world_blurb(people, blocks, stations, holders):
     return (f"Rota: {', '.join(people)}. "
@@ -169,25 +198,63 @@ def world_blurb(people, blocks, stations, holders):
             f"Everyone else is on no station.")
 
 
-def build_prompt(people, blocks, stations, holders, lines, focus=None):
-    """The extraction prompt. `focus` restricts it to a subset of line numbers,
-    which is how a repair pass re-reads only the lines in question."""
+NONE_TOKEN = {"dense": "NONE", "dash": "-"}
+
+
+def build_prompt(people, blocks, stations, holders, lines, focus=None,
+                 fmt="dash"):
+    """The extraction prompt.
+
+    `focus` restricts it to a subset of line numbers, which is how a repair
+    pass re-reads only the lines in question.
+
+    `fmt` selects the shape of the reply, which turned out to matter more than
+    any wording in the rules. The model's dominant failure at full item length
+    is not a wrong code, it is derailing into commentary part-way down the
+    list and never reaching the rest of it -- so the format that wins is the
+    one with the fewest output tokens to derail in:
+
+      dense   a numbered code for every line, NONE where nothing is asserted
+      dash    the same, but `-` instead of the word NONE (about a third of the
+              output tokens, and the numbering still anchors the reply)
+      sparse  only the lines that assert something, everything else omitted
+              (shortest, but the reply no longer starts at a known number)
+    """
     nums = list(focus) if focus is not None else list(range(len(lines)))
     listing = "\n".join(f"{i + 1}. {lines[i]}" for i in nums)
-    # The weak model's dominant failure at this length was not a wrong code: it
-    # was derailing into commentary part-way down the list and never reaching
-    # the remaining lines. Stating the exact count and the number the last code
-    # must carry, twice, is what stopped it.
-    ask = (f"Translate the {len(nums)} lines above. Write exactly {len(nums)} "
-           f"codes, one per line, each prefixed with the same number as its "
-           f"line, in the same order. The numbers you write are "
-           f"{', '.join(str(i + 1) for i in nums[:3])} ... "
-           f"{nums[-1] + 1}, and {nums[-1] + 1} must be the last thing you "
-           f"write.\nNo commentary, no reasoning, no '#', no blank lines, "
-           f"nothing before the first code and nothing after the last one. "
-           f"If a line is unclear, answer NONE and move on.")
+    none_tok = NONE_TOKEN.get(fmt, "NONE")
+
+    if fmt == "sparse":
+        ask = (f"List only the lines above that assert something about the "
+               f"current rota. For each, write its number, a dot, and its "
+               f"code. Omit every other line completely -- do not write a "
+               f"placeholder for it. Numbers must stay in increasing order "
+               f"and the last line you may mention is {nums[-1] + 1}.\n"
+               f"Your reply must begin with a digit and must contain no "
+               f"sentence of English anywhere. Never write a question mark "
+               f"and never reconsider a code once written.")
+    else:
+        ask = (f"Translate the {len(nums)} lines above. Write exactly "
+               f"{len(nums)} codes, one per line, each prefixed with the same "
+               f"number as its line, in the same order. Write `{none_tok}` for "
+               f"a line that asserts nothing. The numbers you write are "
+               f"{', '.join(str(i + 1) for i in nums[:3])} ... "
+               f"{nums[-1] + 1}, and the code numbered {nums[-1] + 1} must be "
+               f"the last thing you write.\n"
+               f"Your reply must begin with the characters `{nums[0] + 1}.` "
+               f"and must contain no sentence of English anywhere. Every line "
+               f"of your reply is at most six words long. Never write a "
+               f"question mark. Never reconsider a code once you have written "
+               f"it: write one code, then move straight on to the next "
+               f"number. If a line is unclear, write `{none_tok}` and move on.")
+
+    example = FEWSHOT if fmt != "sparse" else FEWSHOT_SPARSE
+    if fmt == "dash":
+        example = example.replace("\nNONE", "\n-")
     user = "\n\n".join([
-        CODES, RULES, FEWSHOT,
+        CODES.replace("NONE                         the line constrains nobody",
+                      f"{none_tok:28s} the line constrains nobody"),
+        RULES, example,
         world_blurb(people, blocks, stations, holders),
         f"LINES ({len(nums)} of them)\n" + listing,
         ask,
@@ -237,7 +304,7 @@ def parse_one(code, problem):
     if not s:
         return None
     up = s.upper()
-    if up.startswith("NONE"):
+    if up.startswith("NONE") or s in ("-", "--", "—"):
         return None
     toks = [_clean(t) for t in s.split()]
     toks = [t for t in toks if t]

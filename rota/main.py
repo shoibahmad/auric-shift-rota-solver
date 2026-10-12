@@ -35,7 +35,7 @@ def parse_components(spec):
     return comps
 
 
-def run(items, budget, comps, workers=8, log=None, progress=True):
+def run(items, budget, comps, workers=8, log=None, progress=True, fmt=None):
     client = ModelClient(budget=BUDGETS[budget] if budget in BUDGETS
                          else int(budget), log=log)
     answers, traces = {}, {}
@@ -44,7 +44,8 @@ def run(items, budget, comps, workers=8, log=None, progress=True):
 
     def one(item):
         try:
-            s = solve_item(item, client, budget, comps, want_trace=True)
+            s = solve_item(item, client, budget, comps, want_trace=True,
+                           fmt=fmt)
             a = to_answer(item, s)
             tr = {"case": s.case, "calls": s.calls, "trace": s.trace,
                   "n_worlds": len(s.worlds) if isinstance(s.worlds, list) else None,
@@ -78,6 +79,7 @@ def main(argv=None):
     ap.add_argument("--components", default="all",
                     help="all | none | comma list | -name,-name to drop")
     ap.add_argument("--workers", type=int, default=8)
+    ap.add_argument("--fmt", default=None, help="dense | dash | sparse")
     ap.add_argument("--trace", default=None, help="write a per-item trace here")
     ap.add_argument("--calls-log", default=None,
                     help="write every prompt and reply here (debugging)")
@@ -95,7 +97,8 @@ def main(argv=None):
     comps = parse_components(a.components)
 
     log = [] if a.calls_log else None
-    answers, traces, client = run(items, a.budget, comps, a.workers, log=log)
+    answers, traces, client = run(items, a.budget, comps, a.workers, log=log,
+                                  fmt=a.fmt)
 
     os.makedirs(os.path.dirname(os.path.abspath(a.out)), exist_ok=True)
     with open(a.out, "w", encoding="utf-8") as fh:
