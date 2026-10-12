@@ -51,4 +51,47 @@ mask it. The reasoning is in a comment at the top of `ablate.py`.
 
 ## Reading it
 
-<!-- COMMENTARY -->
+**The formal layer is the whole system.** `-solver` is the same weak model
+answering the same question with no symbolic layer: **0.000 at every budget**,
+with every item declared `unique`. That is the brief's figure reproduced, and it
+is the only arm whose removal is catastrophic rather than costly.
+
+**Two components carry most of the rest, and both act on the extraction, not
+the budget.** `-mus` (0.300) loses the entire inconsistent stratum: citing
+every constraining line instead of a minimal core scores *zero* on all 20
+items, because "contradictory" is not the rule — "minimally contradictory" is.
+`-rules` (0.333) is the inert-family guidance in the prompt, and its cost is
+almost all past-tense station history read as current, which is the one
+over-reading that is never free (`dev/check_entailment.py`: 0/25 entailed).
+
+**The free repairs are worth more than the paid ones.** `-calib` (0.444) and
+`-softneg` (0.433) each cost more than removing *either* paid mechanism, and
+neither spends a model call. They are also additive rather than overlapping:
+replay puts them at -0.021 and -0.058 alone, -0.079 together.
+
+**Live and replay agree where both measured** — `-mus` -0.167 live against
+-0.187 replayed, `-calib` -0.022 against -0.021 — which is the point of running
+both. They disagree on `-recover`: -0.045 live, -0.004 replayed. The replay is
+the better-controlled number (identical model output for both arms), and the
+live gap is about one standard deviation of `full`'s own spread, so the honest
+reading is that `recover` does nothing measurable either way.
+
+**`-vote` at 3x scores 0.539, above the full system's 0.506.** Switching off
+re-extraction-and-selection at three calls *improves* the score, and at ten
+calls it costs 0.044 instead. I have not re-tuned the trigger on this: the 3x
+gap is 0.033 against a 0.028 standard deviation in the same cell, it reverses
+sign at the next budget, and fitting a budget-dependent threshold to 60 items
+with that much spread is how a submission stops generalising. What the pair of
+numbers does support is the conclusion in the writeup — at three calls the paid
+mechanisms are roughly interchangeable and neither is clearly positive, because
+the errors they chase are systematic and resampling does not reach them
+(`dev/check_error_structure.py`: 4% of lines are wrong identically every time,
+and only 28 of 60 items have none of them).
+
+**The confusion matrices show the failure has the honest direction.** At every
+budget the `unique` row leaks into `ambiguous` (27, 23, 23 of 60) and almost
+never the reverse — the system under-extracts and says so, rather than
+inventing a single answer. `inconsistent` recognition improves with budget
+(45 → 43 → 48 of 60) and `inc_label_only` stays at 0.15-0.20, meaning that when
+the kind is called correctly the citation usually meets the minimality rule
+too.

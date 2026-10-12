@@ -67,21 +67,21 @@ returned), none `inconsistent`, and the citation is a minimal unsatisfiable
 subset found by deletion — *definitionally* the scorer's rule, not an
 approximation of it.
 
-**`calib`, the calibrated drop (−0.021, no model call).** The brief says every
+**`calib`, the calibrated drop (−0.022 live, −0.021 replayed; no model call).** The brief says every
 conflicting set here has ≥3 statements and the key agrees (smallest cores: 13 of
 size 3, 4 of size 4, 3 of size 5, **none of size 2**). So an extraction whose
 smallest core has two statements is provably not reporting a conflict the notes
 contain — wrong whichever kind the item is — so there is nothing to lose by
 disbelieving one of the two, and the precision table says which.
 
-**`softneg`, soft negatives (−0.058, no model call).** A line read as inert that
+**`softneg`, soft negatives (−0.033 live, −0.058 replayed; no model call).** A line read as inert that
 names exactly one person and one clock time is tried as a negative block claim,
 kept only if it removes worlds and leaves one. Safe *because* of the entailment
 measurements above. The two free repairs are **additive, not overlapping**
 (−0.079 together); I expected overlap and was wrong.
 
-**`mus` (−0.187).** Citing every constraining line instead of a minimal core
-takes the inconsistent stratum from 0.56 to **0.00**. Citing more is not safer,
+**`mus` (−0.167 live, −0.187 replayed).** Citing every constraining line
+instead of a minimal core scores **0.00** on all 20 inconsistent items. Citing more is not safer,
 it is disqualifying.
 
 **`repair`.** The world count is a proof of extraction error needing no key, so
@@ -171,12 +171,27 @@ contradiction that is not there. **`AMBIG_MAX = 4` and `MIN_CORE = 3`** are read
 off the brief, which states the second as a property of *this* set; a
 two-statement conflict in the held-out set would be dissolved by `calib`.
 
+**The paid mechanisms are not clearly positive, and the ablation says so.**
+`-vote` at 3× scores **0.539 against the full system's 0.506** — switching off
+re-extraction-and-selection *improves* three-call performance — while at ten
+calls the same removal costs 0.044. `-repair` costs 0.017 at 3× and 0.016 at
+10×. I have not re-tuned the trigger on this: the 3× gap is 0.033 against a
+0.028 standard deviation in that very cell, it reverses sign at the next
+budget, and fitting a budget-dependent threshold to 60 items with that much
+spread is how a system stops generalising. The two numbers do support the
+conclusion above — at three calls the paid mechanisms are roughly
+interchangeable and neither is clearly worth its budget, because the errors
+they chase are the systematic ones that resampling cannot reach. By contrast
+the two *free* repairs cost 0.022 and 0.033 to remove, more than either paid
+mechanism, for no calls at all.
+
 **Variance is large and not hidden.** The same configuration moves ±0.04 to 0.10
 macro between runs, and individual passes of one item range 0.400–0.550. Every
 ablation number is a three-run mean with spread, and the symbolic arms are
 *additionally* measured by replay over four fixed extractions, so those
 comparisons carry no sampling noise. No single-run difference below ~0.05 is a
-real effect.
+real effect — which is also why the `-vote` result above is reported rather than
+acted on.
 
 ## 5. If the notes were written by people
 
