@@ -9,7 +9,7 @@ import sys
 import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
-from dev.refparse import parse_item, strip_prefixes, parse_header  # noqa: E402
+from dev.refparse import parse_item, strip_prefixes  # noqa: E402
 from rota.solver import Problem                                    # noqa: E402
 import re                                                          # noqa: E402
 

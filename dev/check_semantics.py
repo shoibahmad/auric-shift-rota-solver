@@ -9,7 +9,7 @@ import os
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from dev.refparse import parse_item                      # noqa: E402
-from rota.solver import Problem, mus, all_muses          # noqa: E402
+from rota.solver import Problem, mus                     # noqa: E402
 from score import score                                  # noqa: E402
 
 

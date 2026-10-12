@@ -83,7 +83,13 @@ def probe_lines(client, n=70, seed=0):
         want = to_text(c) if tag == "hard" else "NONE"
         bucket = "real" if tag == "hard" else tag
         total[bucket] += 1
-        if got.upper().replace(",", " ").split() == want.split():
+        # Case-fold BOTH sides. The first version of this upper-cased only the
+        # model's answer, so every correct code containing a station name or a
+        # person's name was scored as a miss and the `real` bucket read 0/35
+        # when most of those lines were in fact exact matches. The probe was
+        # wrong, not the model; worth leaving the note because that number
+        # nearly sent the design in the wrong direction.
+        if got.casefold().replace(",", " ").split() == want.casefold().split():
             right[bucket] += 1
         else:
             errs.append((bucket, line, want, got))

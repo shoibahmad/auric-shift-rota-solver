@@ -32,7 +32,7 @@ import re
 
 from .extract import (parse_header, body_lines, build_prompt, parse_codes,
                       parse_one)
-from .solver import Problem, mus, pick_core, least_trusted, trust
+from .solver import Problem, mus, pick_core, least_trusted
 
 AMBIG_MAX = 4          # the brief: an ambiguous item has two to four worlds
 RENDER_CAP = 24        # keep answers.json sane when extraction collapses
