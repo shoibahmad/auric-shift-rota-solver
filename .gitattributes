@@ -1,0 +1,8 @@
+# The launcher is executed by sh on the graders' machine: CRLF would break the
+# shebang. Force LF on everything we ship except the Windows helper.
+* text=auto eol=lf
+run text eol=lf
+*.py text eol=lf
+*.md text eol=lf
+*.json text eol=lf
+run.cmd text eol=crlf
