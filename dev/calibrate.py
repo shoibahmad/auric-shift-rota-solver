@@ -5,7 +5,7 @@ often is K (with its arguments) what the line actually says? That is the
 number the solver needs, because when an extraction is contradictory the
 question is which of the colliding constraints to disbelieve.
 
-    python3 dev/calibrate.py runs/fmt_dash_calls.json
+    python3 dev/calibrate.py fixtures/extraction_1x.json
 """
 import json
 import sys

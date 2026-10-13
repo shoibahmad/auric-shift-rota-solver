@@ -13,7 +13,7 @@ layer three times, perturbing only the model's replies.
 If the symbolic layer were deciding on its own, these would agree. They do
 not: nearly every item changes.
 
-    python3 dev/check_model_sensitivity.py runs/fmt_dash_calls.json
+    python3 dev/check_model_sensitivity.py fixtures/extraction_1x.json
 """
 import json
 import random

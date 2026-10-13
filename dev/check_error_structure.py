@@ -13,7 +13,7 @@ Only the last two buckets are recoverable by resampling. The first "all wrong,
 agreed" bucket is a wall: no number of extra calls touches it, because the
 model is not being noisy, it is being consistently mistaken.
 
-    python3 dev/check_error_structure.py runs/p5_calls.json
+    python3 dev/check_error_structure.py fixtures/extraction_5pass.json
 """
 import json
 import sys

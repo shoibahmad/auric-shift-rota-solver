@@ -323,11 +323,11 @@ RUNNABLE = [
     ("dev/check_null_family.py", []),
     ("dev/check_restatements.py", []),
     ("dev/refparse.py", []),
-    ("dev/check_error_structure.py", ["runs/p5_calls.json"]),
-    ("dev/check_model_sensitivity.py", ["runs/fmt_dash_calls.json"]),
-    ("dev/replay.py", ["runs/fmt_dash_calls.json"]),
-    ("dev/calibrate.py", ["runs/fmt_dash_calls.json"]),
-    ("dev/diag_extract.py", ["runs/fmt_dash_calls.json"]),
+    ("dev/check_error_structure.py", ["fixtures/extraction_5pass.json"]),
+    ("dev/check_model_sensitivity.py", ["fixtures/extraction_1x.json"]),
+    ("dev/replay.py", ["fixtures/extraction_1x.json"]),
+    ("dev/calibrate.py", ["fixtures/extraction_1x.json"]),
+    ("dev/diag_extract.py", ["fixtures/extraction_1x.json"]),
 ]
 for script, args in RUNNABLE:
     if args and not all(os.path.exists(os.path.join(ROOT, a)) for a in args):

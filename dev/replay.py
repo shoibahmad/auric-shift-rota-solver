@@ -12,7 +12,7 @@ component switched off, so every arm sees literally the same model output. The
 live table in ABLATION.md is what the graders re-run; this one is what the
 component claims in the writeup rest on.
 
-    python3 dev/replay.py runs/v3_1x_calls.json runs/fmt_dash_calls.json ...
+    python3 dev/replay.py runs/v3_1x_calls.json fixtures/extraction_1x.json ...
 """
 import json
 import sys

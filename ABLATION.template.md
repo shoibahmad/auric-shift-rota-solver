@@ -46,8 +46,8 @@ python3 ablate.py --items items.json --key visible_key.json \
 python3 ablate.py --budgets 1x,3x,10x --runs 3 --plan full --outdir runs/full
 
 # replay table: no model calls, exact comparison
-python3 dev/replay.py runs/fmt_dash_calls.json runs/v2_1x_calls.json \
-    runs/p3_calls.json runs/p5_calls.json
+python3 dev/replay.py fixtures/extraction_1x.json fixtures/extraction_1x.json \
+    fixtures/extraction_3pass.json fixtures/extraction_5pass.json
 ```
 
 `ablate.py` writes `runs/ablation/ablation.md` plus the `answers.json`,
@@ -85,7 +85,7 @@ over-reading that is never free (`dev/check_entailment.py`: 0/25 entailed).
 **The free repairs are worth more than the paid ones.** `-calib` (0.444) and
 `-softneg` (0.433) each cost more than removing *either* paid mechanism, and
 neither spends a model call. They are also additive rather than overlapping:
-replay puts them at -0.021 and -0.058 alone, -0.079 together.
+replay puts them at -0.022 and -0.061 alone, -0.083 together.
 
 **Live and replay agree where both measured** — `-mus` -0.167 live against
 -0.187 replayed, `-calib` -0.022 against -0.021 — which is the point of running

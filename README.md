@@ -79,7 +79,7 @@ python3 ablate.py --items items.json --key visible_key.json \
 
 # the symbolic arms again, replayed over recorded extractions: no new calls,
 # and so no sampling noise in the comparison
-python3 dev/replay.py runs/fmt_dash_calls.json runs/p3_calls.json \
+python3 dev/replay.py fixtures/extraction_1x.json fixtures/extraction_3pass.json \
     > runs/replay_table.md
 
 # assemble ABLATION.md from the tracked template and the two tables
@@ -113,6 +113,7 @@ Individual arms can be run by hand:
 | [ablate.py](ablate.py) | reproduces the ablation table |
 | [verify.py](verify.py) | pre-flight checks for the four auto-fail conditions |
 | [dev/](dev/) | characterisation probes and measurements; not part of the pipeline |
+| [fixtures/](fixtures/) | recorded extractions, so every measurement replays from a clean checkout with no model calls |
 
 `dev/` is kept because the writeup's claims come from it, and each script
 reproduces exactly one measurement:

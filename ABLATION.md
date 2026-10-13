@@ -46,8 +46,8 @@ python3 ablate.py --items items.json --key visible_key.json \
 python3 ablate.py --budgets 1x,3x,10x --runs 3 --plan full --outdir runs/full
 
 # replay table: no model calls, exact comparison
-python3 dev/replay.py runs/fmt_dash_calls.json runs/v2_1x_calls.json \
-    runs/p3_calls.json runs/p5_calls.json
+python3 dev/replay.py fixtures/extraction_1x.json fixtures/extraction_1x.json \
+    fixtures/extraction_3pass.json fixtures/extraction_5pass.json
 ```
 
 `ablate.py` writes `runs/ablation/ablation.md` plus the `answers.json`,
@@ -143,17 +143,17 @@ Rows are the true kind, columns what was declared. Summed over the three runs, s
 ## Replay table — symbolic components, no sampling noise
 
 
-| arm | macro (mean of 4) | unique | ambiguous | inconsistent | vs full |
+| arm | macro (mean of 3) | unique | ambiguous | inconsistent | vs full |
 |---|---|---|---|---|---|
-| `full` | 0.479 +/- 0.036 | 0.47 | 0.40 | 0.56 | -- |
-| `-mus` | 0.292 +/- 0.028 | 0.47 | 0.40 | 0.00 | -0.187 |
-| `-calib` | 0.458 +/- 0.049 | 0.47 | 0.34 | 0.56 | -0.021 |
-| `-softneg` | 0.421 +/- 0.030 | 0.41 | 0.29 | 0.56 | -0.058 |
-| `-calib,-softneg` | 0.400 +/- 0.043 | 0.41 | 0.23 | 0.56 | -0.079 |
-| `-recover` | 0.475 +/- 0.042 | 0.47 | 0.39 | 0.56 | -0.004 |
-| `-strict` | 0.475 +/- 0.030 | 0.47 | 0.40 | 0.55 | -0.004 |
+| `full` | 0.483 +/- 0.041 | 0.47 | 0.38 | 0.60 | -- |
+| `-mus` | 0.283 +/- 0.027 | 0.47 | 0.38 | 0.00 | -0.200 |
+| `-calib` | 0.461 +/- 0.057 | 0.47 | 0.32 | 0.60 | -0.022 |
+| `-softneg` | 0.422 +/- 0.034 | 0.40 | 0.27 | 0.60 | -0.061 |
+| `-calib,-softneg` | 0.400 +/- 0.049 | 0.40 | 0.20 | 0.60 | -0.083 |
+| `-recover` | 0.478 +/- 0.048 | 0.47 | 0.37 | 0.60 | -0.006 |
+| `-strict` | 0.478 +/- 0.034 | 0.47 | 0.38 | 0.58 | -0.006 |
 
-logs: fmt_dash_calls.json, v2_1x_calls.json, p3_calls.json, p5_calls.json
+logs: extraction_1x.json, extraction_3pass.json, extraction_5pass.json
 
 ## Reading it
 
@@ -173,7 +173,7 @@ over-reading that is never free (`dev/check_entailment.py`: 0/25 entailed).
 **The free repairs are worth more than the paid ones.** `-calib` (0.444) and
 `-softneg` (0.433) each cost more than removing *either* paid mechanism, and
 neither spends a model call. They are also additive rather than overlapping:
-replay puts them at -0.021 and -0.058 alone, -0.079 together.
+replay puts them at -0.022 and -0.061 alone, -0.083 together.
 
 **Live and replay agree where both measured** — `-mus` -0.167 live against
 -0.187 replayed, `-calib` -0.022 against -0.021 — which is the point of running

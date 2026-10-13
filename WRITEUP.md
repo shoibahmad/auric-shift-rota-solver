@@ -52,7 +52,7 @@ core is provably not a conflict the notes contain and is wrong whichever kind th
 item is. Nothing is lost by disbelieving one, and the precision table says which.
 `softneg` (−0.033) is the mirror: a line read as inert naming one person and
 one clock time is tried as a negative block claim, kept only if it removes worlds
-and leaves one. They are **additive** (−0.079). Both reverse sign at 3x, where removing
+and leaves one. They are **additive** (−0.083). Both reverse sign at 3x, where removing
 either *gains* ~0.07 — just outside the table's measured null of 0.045 — so
 they earn their place at 1x and plausibly interfere with the repair loop above
 it.

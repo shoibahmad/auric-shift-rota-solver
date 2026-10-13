@@ -9,8 +9,8 @@ model output:
   union     take every constraint the passes agree on wherever any of them
             speaks, and use it if the result is satisfiable      (third)
 
-    python3 dev/tune_aggregation.py runs/p3_calls.json
-    python3 dev/tune_aggregation.py runs/p5_calls.json
+    python3 dev/tune_aggregation.py fixtures/extraction_3pass.json
+    python3 dev/tune_aggregation.py fixtures/extraction_5pass.json
 """
 import json
 import sys
