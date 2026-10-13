@@ -15,7 +15,24 @@ import os
 import threading
 import time
 
-from openai import OpenAI
+try:
+    from openai import OpenAI
+except ImportError as _exc:                                      # noqa: F841
+    # A bare ModuleNotFoundError traceback does not tell you what to do, and
+    # the usual cause is subtle: `python3` and `python` can be different
+    # interpreters on the same machine, so the dependency is installed for one
+    # and missing for the other.
+    import sys
+    raise SystemExit(
+        "The `openai` package is not installed for this interpreter.\n"
+        f"  interpreter: {sys.executable}\n"
+        f"  version    : {sys.version.split()[0]}\n"
+        "Install the pinned dependency:\n"
+        f"  {sys.executable} -m pip install -r requirements.txt\n"
+        "If you have several Pythons, check that the one you installed into is "
+        "the one you are running -- `python3` and `python` often differ on "
+        "Windows, where `python3` can be the Microsoft Store stub."
+    ) from None
 
 DEFAULT_BASE_URL = "https://openrouter.ai/api/v1"
 DEFAULT_MODEL = "ibm-granite/granite-4.2-8b"

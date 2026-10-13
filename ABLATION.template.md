@@ -46,7 +46,7 @@ python3 ablate.py --items items.json --key visible_key.json \
 python3 ablate.py --budgets 1x,3x,10x --runs 3 --plan full --outdir runs/full
 
 # replay table: no model calls, exact comparison
-python3 dev/replay.py fixtures/extraction_1x.json fixtures/extraction_1x.json \
+python3 dev/replay.py fixtures/extraction_1x.json \
     fixtures/extraction_3pass.json fixtures/extraction_5pass.json
 ```
 

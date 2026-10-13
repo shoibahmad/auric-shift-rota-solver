@@ -40,6 +40,14 @@ cp .env.example .env                      # then put the endpoint key in it
 `run` is a shell launcher over `python3 -m rota.main`; `run.cmd` is the same for
 Windows. Set `PYTHON=python3.13` to pick an interpreter.
 
+**On Windows, check which Python you are using.** `python3` and `python` are
+often different interpreters there — `python3` frequently resolves to the
+Microsoft Store stub — so a dependency installed for one is missing for the
+other. Install and run with the same one, e.g. `python -m pip install -r
+requirements.txt` then `PYTHON=python ./run ...`. Anything that needs the
+endpoint now says so explicitly instead of raising a bare
+`ModuleNotFoundError`.
+
 Scoring, with the provided scorer:
 
 ```bash
