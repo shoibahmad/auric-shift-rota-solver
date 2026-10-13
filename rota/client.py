@@ -17,7 +17,7 @@ import time
 
 try:
     from openai import OpenAI
-except ImportError as _exc:                                      # noqa: F841
+except ImportError:
     # A bare ModuleNotFoundError traceback does not tell you what to do, and
     # the usual cause is subtle: `python3` and `python` can be different
     # interpreters on the same machine, so the dependency is installed for one
