@@ -67,14 +67,14 @@ Three runs per cell unless noted; **mean +/- population standard deviation** of 
 |---|---|---|---|---|
 | `full` | 0.467 +/- 0.036 | 0.506 +/- 0.028 | 0.522 +/- 0.016 | every component on |
 | `-solver` | 0.000 +/- 0.000 | 0.000 +/- 0.000 | 0.000 +/- 0.000 | no formal layer: the model is asked for the answer |
-| `-mus` | 0.300 +/- 0.024 | -- | -- | cite every constraining line, not a minimal core |
-| `-rules` | 0.333 +/- 0.027 | -- | -- | extraction prompt without the inert-family rules |
-| `-calib` | 0.444 +/- 0.034 | -- | -- | no calibrated drop on a too-small conflict (free, no call) |
+| `-mus` | 0.300 +/- 0.024 | 0.394 +/- 0.055 | 0.372 +/- 0.028 | cite every constraining line, not a minimal core |
+| `-rules` | 0.333 +/- 0.027 | 0.378 +/- 0.028 | 0.394 +/- 0.028 | extraction prompt without the inert-family rules |
+| `-calib` | 0.444 +/- 0.034 | 0.567 +/- 0.017 | -- | no calibrated drop on a too-small conflict (free, no call) |
 | `-softneg` | 0.433 +/- 0.049 | -- | -- | no soft negatives on missed name+time lines (free, no call) |
 | `-vote` | -- | 0.539 +/- 0.021 | 0.478 +/- 0.021 | no re-extraction and selection |
 | `-repair` | -- | 0.489 +/- 0.016 | 0.506 +/- 0.048 | no count-triggered targeted re-reads |
-| `-recover` | 0.422 +/- 0.008 | -- | -- | no free re-parse of dropped codes |
-| `-strict` | 0.472 +/- 0.016 | -- | -- | accept codes the validator drops, by fuzzy name matching |
+| `-recover` | 0.422 +/- 0.008 | 0.583 +/- 0.014 | 0.567 +/- 0.036 | no free re-parse of dropped codes |
+| `-strict` | 0.472 +/- 0.016 | 0.494 +/- 0.028 | 0.506 +/- 0.016 | accept codes the validator drops, by fuzzy name matching |
 
 ### Per-kind rates and the two diagnostics
 
@@ -87,15 +87,24 @@ Three runs per cell unless noted; **mean +/- population standard deviation** of 
 | `-solver` | 3x | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 3-3 |
 | `-solver` | 10x | 0.00 | 0.00 | 0.00 | 0.00 | 0.00 | 5-5 |
 | `-mus` | 1x | 0.50 | 0.40 | 0.00 | 0.40 | 0.68 | 1-1 |
+| `-mus` | 3x | 0.55 | 0.63 | 0.00 | 0.63 | 0.68 | 2-3 |
+| `-mus` | 10x | 0.52 | 0.60 | 0.00 | 0.60 | 0.78 | 2-10 |
 | `-rules` | 1x | 0.28 | 0.28 | 0.43 | 0.28 | 0.08 | 1-1 |
+| `-rules` | 3x | 0.35 | 0.40 | 0.38 | 0.40 | 0.17 | 2-3 |
+| `-rules` | 10x | 0.42 | 0.35 | 0.42 | 0.37 | 0.13 | 2-10 |
 | `-calib` | 1x | 0.42 | 0.43 | 0.48 | 0.43 | 0.32 | 1-1 |
+| `-calib` | 3x | 0.62 | 0.45 | 0.62 | 0.45 | 0.17 | 2-3 |
 | `-softneg` | 1x | 0.42 | 0.35 | 0.53 | 0.35 | 0.17 | 1-1 |
 | `-vote` | 3x | 0.48 | 0.50 | 0.63 | 0.50 | 0.18 | 1-3 |
 | `-vote` | 10x | 0.48 | 0.43 | 0.52 | 0.43 | 0.22 | 1-3 |
 | `-repair` | 3x | 0.47 | 0.50 | 0.50 | 0.50 | 0.25 | 3-3 |
 | `-repair` | 10x | 0.50 | 0.45 | 0.57 | 0.45 | 0.22 | 5-5 |
 | `-recover` | 1x | 0.40 | 0.37 | 0.50 | 0.37 | 0.20 | 1-1 |
+| `-recover` | 3x | 0.53 | 0.58 | 0.63 | 0.58 | 0.17 | 2-3 |
+| `-recover` | 10x | 0.47 | 0.58 | 0.65 | 0.58 | 0.17 | 2-10 |
 | `-strict` | 1x | 0.52 | 0.37 | 0.53 | 0.37 | 0.22 | 1-1 |
+| `-strict` | 3x | 0.53 | 0.42 | 0.53 | 0.42 | 0.17 | 2-3 |
+| `-strict` | 10x | 0.47 | 0.50 | 0.55 | 0.50 | 0.25 | 2-10 |
 
 ### Confusion matrix, full system
 
