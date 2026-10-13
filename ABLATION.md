@@ -69,10 +69,10 @@ Three runs per cell unless noted; **mean +/- population standard deviation** of 
 | `-solver` | 0.000 +/- 0.000 | 0.000 +/- 0.000 | 0.000 +/- 0.000 | no formal layer: the model is asked for the answer |
 | `-mus` | 0.300 +/- 0.024 | 0.394 +/- 0.055 | 0.372 +/- 0.028 | cite every constraining line, not a minimal core |
 | `-rules` | 0.333 +/- 0.027 | 0.378 +/- 0.028 | 0.394 +/- 0.028 | extraction prompt without the inert-family rules |
-| `-calib` | 0.444 +/- 0.034 | 0.567 +/- 0.017 | -- | no calibrated drop on a too-small conflict (free, no call) |
-| `-softneg` | 0.433 +/- 0.049 | -- | -- | no soft negatives on missed name+time lines (free, no call) |
-| `-vote` | -- | 0.539 +/- 0.021 | 0.478 +/- 0.021 | no re-extraction and selection |
-| `-repair` | -- | 0.489 +/- 0.016 | 0.506 +/- 0.048 | no count-triggered targeted re-reads |
+| `-calib` | 0.444 +/- 0.034 | 0.533 +/- 0.049 | 0.489 +/- 0.044 | no calibrated drop on a too-small conflict (free, no call) |
+| `-softneg` | 0.433 +/- 0.049 | 0.578 +/- 0.016 | 0.572 +/- 0.021 | no soft negatives on missed name+time lines (free, no call) |
+| `-vote` | 0.511 +/- 0.016 | 0.539 +/- 0.021 | 0.478 +/- 0.021 | no re-extraction and selection |
+| `-repair` | 0.489 +/- 0.034 | 0.489 +/- 0.016 | 0.506 +/- 0.048 | no count-triggered targeted re-reads |
 | `-recover` | 0.422 +/- 0.008 | 0.583 +/- 0.014 | 0.567 +/- 0.036 | no free re-parse of dropped codes |
 | `-strict` | 0.472 +/- 0.016 | 0.494 +/- 0.028 | 0.506 +/- 0.016 | accept codes the validator drops, by fuzzy name matching |
 
@@ -93,10 +93,15 @@ Three runs per cell unless noted; **mean +/- population standard deviation** of 
 | `-rules` | 3x | 0.35 | 0.40 | 0.38 | 0.40 | 0.17 | 2-3 |
 | `-rules` | 10x | 0.42 | 0.35 | 0.42 | 0.37 | 0.13 | 2-10 |
 | `-calib` | 1x | 0.42 | 0.43 | 0.48 | 0.43 | 0.32 | 1-1 |
-| `-calib` | 3x | 0.62 | 0.45 | 0.62 | 0.45 | 0.17 | 2-3 |
+| `-calib` | 3x | 0.57 | 0.43 | 0.60 | 0.43 | 0.18 | 2-3 |
+| `-calib` | 10x | 0.50 | 0.40 | 0.57 | 0.40 | 0.13 | 2-10 |
 | `-softneg` | 1x | 0.42 | 0.35 | 0.53 | 0.35 | 0.17 | 1-1 |
+| `-softneg` | 3x | 0.58 | 0.50 | 0.65 | 0.50 | 0.12 | 2-3 |
+| `-softneg` | 10x | 0.55 | 0.57 | 0.60 | 0.57 | 0.10 | 2-10 |
+| `-vote` | 1x | 0.48 | 0.48 | 0.57 | 0.48 | 0.12 | 1-1 |
 | `-vote` | 3x | 0.48 | 0.50 | 0.63 | 0.50 | 0.18 | 1-3 |
 | `-vote` | 10x | 0.48 | 0.43 | 0.52 | 0.43 | 0.22 | 1-3 |
+| `-repair` | 1x | 0.43 | 0.43 | 0.60 | 0.43 | 0.17 | 1-1 |
 | `-repair` | 3x | 0.47 | 0.50 | 0.50 | 0.50 | 0.25 | 3-3 |
 | `-repair` | 10x | 0.50 | 0.45 | 0.57 | 0.45 | 0.22 | 5-5 |
 | `-recover` | 1x | 0.40 | 0.37 | 0.50 | 0.37 | 0.20 | 1-1 |
@@ -176,6 +181,30 @@ both. They disagree on `-recover`: -0.045 live, -0.004 replayed. The replay is
 the better-controlled number (identical model output for both arms), and the
 live gap is about one standard deviation of `full`'s own spread, so the honest
 reading is that `recover` does nothing measurable either way.
+
+**There is an empirical null in this table, and it should be read first.**
+`-vote` and `-repair` at 1x are *the same code path* as `full`: neither
+component can act when the single call has already been spent, so those cells
+measure identical behaviour. They come out **+0.044 and +0.022 away from
+`full`**. That is what zero effect looks like here, measured rather than
+assumed, and it is the yardstick for every other number below. Anything inside
+about 0.045 is indistinguishable from no effect at all.
+
+By that yardstick: the formal layer (-0.467), minimal-core citation (-0.167 at
+1x) and the inert-family rules (-0.133) are real and large. Everything else in
+the table is at or near the null, including the three results that look like
+the full system being beaten.
+
+**`-softneg` and `-recover` score ABOVE the full system at 3x and 10x**
+(+0.072 and +0.078 at 3x; +0.050 and +0.044 at 10x). Both are free repairs that
+help at 1x (-0.033 and -0.044) and appear to hurt once a repair loop is also
+running, which is a plausible interference: a speculative constraint added for
+free can lock the selection onto a wrong-but-plausible verdict that the paid
+re-read would otherwise have corrected. The 3x figures sit just outside the
+null and the 10x figures sit on it, so I record this as a suggestive finding
+rather than a result, and as the first thing I would chase with more time. It
+does qualify the writeup's claim: the free repairs earn their place *at 1x*,
+which is the budget weighted most heavily, not necessarily above it.
 
 **`-vote` at 3x scores 0.539, above the full system's 0.506.** Switching off
 re-extraction-and-selection at three calls *improves* the score, and at ten

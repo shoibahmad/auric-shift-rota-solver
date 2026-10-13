@@ -46,34 +46,36 @@ worlds. One world is `unique`, two or more `ambiguous` (all returned), none
 constraining line instead scores **0.00** on all 20 inconsistent items (`mus`,
 −0.167); citing more is disqualifying.
 
-**Two free repairs, worth more than either paid one.** `calib` (−0.022): every
+**Two free repairs, worth more than either paid one at 1x.** `calib` (−0.022): every
 real conflicting set has ≥3 statements — **none of size 2** — so a two-statement
 core is provably not a conflict the notes contain and is wrong whichever kind the
 item is. Nothing is lost by disbelieving one, and the precision table says which.
 `softneg` (−0.033) is the mirror: a line read as inert naming one person and
 one clock time is tried as a negative block claim, kept only if it removes worlds
-and leaves one. They are **additive** (−0.079); I expected overlap and was wrong.
+and leaves one. They are **additive** (−0.079). Both reverse sign at 3x, where removing
+either *gains* ~0.07 — just outside the table's measured null of 0.045 — so
+they earn their place at 1x and plausibly interfere with the repair loop above
+it.
 
 **`repair`.** The world count proves extraction error with no key: `>4` re-reads
 only the lines read as inert, `0` re-reads *exactly the core*. Impossible answers
-fall from **11 at 1× to 1 at 3×**. **Reply format** was a component in disguise —
-the model derails into commentary mid-list, and dictating the reply's first
-characters took coverage **68% → 89%**.
+fall from **11 at 1× to 1 at 3×**. **Reply format** was a component in disguise:
+dictating the reply's first characters took coverage **68% → 89%**.
 
 ## 3. What I built and then removed
 
 **Two aggregation designs.** Per-line vote merging made the curve non-monotone
 (10× fell to 0.400) by dropping constraints only a minority of passes found,
 dissolving correctly-detected contradictions; verdict-majority voting replaced it
-and was also wrong. Replaying one three-pass log with the extraction held fixed,
+and was also wrong. Replaying one three-pass log with the extraction fixed,
 **every way of combining three extractions lost to the best single one**
-(0.383–0.517 vs passes of 0.533 / 0.400 / 0.550) — the errors are systematic, so
-averaging reinforces them. What works is *selection*: discard provably-wrong
-candidates, keep the first survivor (0.567, saturating at three).
+(0.383–0.517 vs passes of 0.533 / 0.400 / 0.550): the errors are systematic, so
+averaging reinforces them. What works is *selection* — keep the first candidate
+not provably wrong (0.567, saturating at three).
 
 **Restatement agreement, removed** after measuring that the scorer trap it
-guarded cannot fire. **`recover`/`strict`, near-dead** (−0.004), reported at zero
-rather than deleted.
+guarded cannot fire; **`strict`** measures at zero and is kept anyway, because
+refusing to repair a hallucinated name is a property I want held out.
 
 ## 4. Where it breaks, and why the curve is flat
 
@@ -86,19 +88,19 @@ resampling can reach, and the system already sits on it at one call.
 
 **Under-extraction on unique items** is the largest bucket (9 of 20 declared
 ambiguous at 1×): nothing separates "genuinely ambiguous" from "one constraint
-short", so no trigger fires. **`MIN_CORE = 3`** is read off the brief as a property
-of *this* set; a two-statement conflict held out would be dissolved by `calib`.
-Neither paid mechanism is clearly positive, and with SD 0.034–0.043 over 27 runs
-nothing below ~0.05 is real.
+short", so no trigger fires.
+Two ablation cells that are *identical code paths* to the full system differ
+from it by 0.044 and 0.022, so that is what zero effect measures here: only the
+formal layer, `mus` and the prompt rules clear it.
 
 ## 5. If the notes were written by people
 
 **Survives.** The formal layer never touches text. The few-shot example uses
 *paraphrases absent from `items.json`* — "starts the moment Erin finishes", not the
 visible set's "directly after" — so the extractor sees the semantic category, not
-the template, and repair triggers are properties of a solution count. **Degrades
-gracefully:** the vocabulary is closed, so what it cannot express goes inert and
-the item over-declares ambiguous — failing honestly and *visibly*.
+the template, and repair triggers are properties of a solution count. **Degrades gracefully:** what the closed
+vocabulary cannot express goes inert, so the item over-declares ambiguous —
+failing honestly and *visibly*.
 
 **Breaks.** Real notes conflict *in degree*, and the architecture rests on hedges
 carrying full force, which the brief guarantees and reality does not. `softneg`

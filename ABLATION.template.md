@@ -94,6 +94,30 @@ the better-controlled number (identical model output for both arms), and the
 live gap is about one standard deviation of `full`'s own spread, so the honest
 reading is that `recover` does nothing measurable either way.
 
+**There is an empirical null in this table, and it should be read first.**
+`-vote` and `-repair` at 1x are *the same code path* as `full`: neither
+component can act when the single call has already been spent, so those cells
+measure identical behaviour. They come out **+0.044 and +0.022 away from
+`full`**. That is what zero effect looks like here, measured rather than
+assumed, and it is the yardstick for every other number below. Anything inside
+about 0.045 is indistinguishable from no effect at all.
+
+By that yardstick: the formal layer (-0.467), minimal-core citation (-0.167 at
+1x) and the inert-family rules (-0.133) are real and large. Everything else in
+the table is at or near the null, including the three results that look like
+the full system being beaten.
+
+**`-softneg` and `-recover` score ABOVE the full system at 3x and 10x**
+(+0.072 and +0.078 at 3x; +0.050 and +0.044 at 10x). Both are free repairs that
+help at 1x (-0.033 and -0.044) and appear to hurt once a repair loop is also
+running, which is a plausible interference: a speculative constraint added for
+free can lock the selection onto a wrong-but-plausible verdict that the paid
+re-read would otherwise have corrected. The 3x figures sit just outside the
+null and the 10x figures sit on it, so I record this as a suggestive finding
+rather than a result, and as the first thing I would chase with more time. It
+does qualify the writeup's claim: the free repairs earn their place *at 1x*,
+which is the budget weighted most heavily, not necessarily above it.
+
 **`-vote` at 3x scores 0.539, above the full system's 0.506.** Switching off
 re-extraction-and-selection at three calls *improves* the score, and at ten
 calls it costs 0.044 instead. I have not re-tuned the trigger on this: the 3x
