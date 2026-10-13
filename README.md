@@ -97,9 +97,11 @@ python3 dev/build_ablation.py --outdir runs/ablation \
 
 `ablate.py` writes, for every cell of the table, the `answers.json`,
 `score.json` and per-item trace that produced it, so any number can be traced
-back to the answers behind it. Results and commentary:
-[ABLATION.md](ABLATION.md), assembled from
-[ABLATION.template.md](ABLATION.template.md).
+back to the answers behind it. **[ABLATION.md](ABLATION.md) is the deliverable.**
+[ABLATION.template.md](ABLATION.template.md) is its source — the prose, with
+two placeholders that `dev/build_ablation.py` fills from
+`runs/ablation/*_score.json` and the replay output, so no figure in the
+deliverable is ever hand-typed. Edit the template; regenerate the other.
 
 Individual arms can be run by hand:
 

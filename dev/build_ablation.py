@@ -131,6 +131,10 @@ def main():
     # always built from the tracked template, never from the last output, so
     # running this twice cannot double-substitute or lose the placeholders
     doc = io.open(a.template, encoding="utf-8").read()
+    # the template's "edit this file, not the generated one" banner is for
+    # whoever opens the template; it must not survive into the output, where
+    # it would be telling the reader the opposite of what it means
+    doc = re.sub(r"\A<!--\s*SOURCE FILE.*?-->\s*", "", doc, flags=re.S)
     doc = doc.replace("<!-- LIVE_TABLE -->", live)
     doc = doc.replace("<!-- REPLAY_TABLE -->", replay)
     io.open(a.target, "w", encoding="utf-8", newline="\n").write(doc)

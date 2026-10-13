@@ -1,13 +1,21 @@
+<!-- SOURCE FILE. Edit this, not ABLATION.md.
+     ABLATION.md is generated from this template by dev/build_ablation.py,
+     which substitutes the two tables below from runs/ablation/*_score.json
+     and runs/replay_table.md so no figure is ever hand-typed. -->
+
 # Ablation
+
+<sub>Generated from `ABLATION.template.md` by `dev/build_ablation.py` — edit
+the template, not this file.</sub>
 
 Two tables. They measure the same components by different means and agree,
 which is the point of having both.
 
 - **Live** — the full system re-run end to end with one component switched
   off, three runs per cell. This is the table to re-run.
-- **Replay** — the purely-symbolic components measured over four *recorded*
-  extractions, with no new model calls. Same model output for every arm, so
-  the comparison carries no sampling noise at all.
+- **Replay** — the purely-symbolic components measured over the three
+  *recorded* extractions in `fixtures/`, with no new model calls. Same model
+  output for every arm, so the comparison carries no sampling noise at all.
 
 ### What "reproduces" means here
 
@@ -25,9 +33,9 @@ mean.** That spread is a property of `temperature=1.0` on a 60-item set, not
 of the system: the three-run cells below were sampled from exactly these
 distributions, and re-running one cell once can easily move it 0.05. The
 conclusions that survive this noise are the large ones -- the formal layer is
-worth everything, minimal-core citation is worth the whole inconsistent
-stratum, the free repairs beat the paid ones -- and those are the ones the
-commentary draws.
+worth everything, and minimal-core citation is worth the whole inconsistent
+stratum. The smaller arms do not clear it, which is why the commentary below
+measures an explicit null before drawing anything from them.
 
 The replay table exists for the same reason. Three individual extractions of
 the same item scored 0.533 / 0.400 / 0.550 on one log and 0.483 / 0.417 /
@@ -38,26 +46,32 @@ the small effects are resolved there rather than in the live table.
 ## Reproducing
 
 ```bash
-# live table (this is the one to re-run)
+# the live table below: every arm at every budget, three runs per cell
 python3 ablate.py --items items.json --key visible_key.json \
-    --budgets 1x,3x,10x --runs 3 --plan focused --outdir runs/ablation
+    --budgets 1x,3x,10x --runs 3 --plan full --outdir runs/ablation
 
-# every arm at every budget, if you want it
-python3 ablate.py --budgets 1x,3x,10x --runs 3 --plan full --outdir runs/full
+# cheaper: each arm only at the budgets where its component can act
+python3 ablate.py --budgets 1x,3x,10x --runs 3 --plan focused \
+    --outdir runs/focused
 
 # replay table: no model calls, exact comparison
 python3 dev/replay.py fixtures/extraction_1x.json \
     fixtures/extraction_3pass.json fixtures/extraction_5pass.json
+
+# rebuild this document from the template and those two results
+python3 dev/build_ablation.py --outdir runs/ablation \
+    --replay runs/replay_table.md
 ```
 
 `ablate.py` writes `runs/ablation/ablation.md` plus the `answers.json`,
 `score.json` and per-item trace behind **every cell**, so any number in the
 table can be traced back to the answers that produced it.
 
-Under the `focused` plan each arm runs at the budgets where its component can
-act — a component that only spends extra calls has nothing to do at 1×, and a
-component that acts on the extraction is measured at 1× where no repair can
-mask it. The reasoning is in a comment at the top of `ablate.py`.
+Every cell below is measured. The `focused` plan exists as a cheaper option —
+it runs each arm only where its component can act, since one that merely spends
+extra calls has nothing to do at 1× — but the shipped table is the full grid,
+and the cells `focused` would have skipped turned out to be the most
+informative ones (see the null, below).
 
 ## Live table
 
@@ -82,17 +96,19 @@ items, because "contradictory" is not the rule — "minimally contradictory" is.
 almost all past-tense station history read as current, which is the one
 over-reading that is never free (`dev/check_entailment.py`: 0/25 entailed).
 
-**The free repairs are worth more than the paid ones.** `-calib` (0.444) and
-`-softneg` (0.433) each cost more than removing *either* paid mechanism, and
-neither spends a model call. They are also additive rather than overlapping:
-replay puts them at -0.022 and -0.061 alone, -0.083 together.
+**The free repairs are worth more than the paid ones at 1x** — and only
+there. `-calib` (0.444) and `-softneg` (0.433) each cost more at one call than
+removing *either* paid mechanism does, without spending a call, and they are
+additive rather than overlapping: replay puts them at -0.022 and -0.061 alone,
+-0.083 together. Above 1x the sign reverses; see below. That reversal is why
+this heading carries a qualifier the writeup's earlier drafts did not.
 
-**Live and replay agree where both measured** — `-mus` -0.167 live against
--0.187 replayed, `-calib` -0.022 against -0.021 — which is the point of running
-both. They disagree on `-recover`: -0.045 live, -0.004 replayed. The replay is
-the better-controlled number (identical model output for both arms), and the
-live gap is about one standard deviation of `full`'s own spread, so the honest
-reading is that `recover` does nothing measurable either way.
+**Live and replay agree where both measured** — at 1x, `-mus` is -0.167 live
+against -0.200 replayed and `-calib` -0.022 against -0.022 — which is the point
+of running both. They disagree on `-recover`: -0.044 live, -0.006 replayed. The
+replay is the better-controlled number (identical model output for both arms)
+and the live gap is about one standard deviation of `full`'s own spread, so the
+honest reading is that `recover` does nothing measurable either way.
 
 **There is an empirical null in this table, and it should be read first.**
 `-vote` and `-repair` at 1x are *the same code path* as `full`: neither
