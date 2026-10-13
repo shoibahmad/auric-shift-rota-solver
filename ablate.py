@@ -126,7 +126,7 @@ def main():
     for name, spec, blurb in arms:
         comps = parse_components(spec)
         for b in budgets:
-            if name in ONLY_MULTI and b == "1x":
+            if name in ONLY_MULTI and b == "1x" and a.plan != "full":
                 table[(name, b)] = ("=full", None)
                 continue
             if a.plan == "focused" and b not in FOCUSED.get(name, budgets):
