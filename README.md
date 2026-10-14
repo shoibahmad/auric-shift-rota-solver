@@ -43,13 +43,29 @@ cp .env.example .env                      # then put the endpoint key in it
 `run` is a shell launcher over `python3 -m rota.main`; `run.cmd` is the same for
 Windows. Set `PYTHON=python3.13` to pick an interpreter.
 
-**On Windows, check which Python you are using.** `python3` and `python` are
-often different interpreters there — `python3` frequently resolves to the
-Microsoft Store stub — so a dependency installed for one is missing for the
-other. Install and run with the same one, e.g. `python -m pip install -r
-requirements.txt` then `PYTHON=python ./run ...`. Anything that needs the
-endpoint now says so explicitly instead of raising a bare
-`ModuleNotFoundError`.
+### On Windows
+
+The commands in this README are written for a POSIX shell, which is what the
+graders will use. Three things differ in PowerShell, and all three produce
+confusing errors rather than obvious ones:
+
+| | |
+|---|---|
+| `python3` is often **not** your Python | It usually resolves to the Microsoft Store stub, so a dependency installed for `python` is missing for `python3`. Use `python`. Anything needing the endpoint now names the interpreter and the fix rather than raising a bare `ModuleNotFoundError`. |
+| `\` at the end of a line is **bash** continuation | Pasted into PowerShell on one line it becomes a literal character — `\--replay` — and argparse rejects it. Put the command on one line, or use a backtick. |
+| `./run` is a shell script | Use `.\run.cmd`, or `python -m rota.main`, which works in any shell. |
+
+So the three documented commands become:
+
+```powershell
+python -m pip install -r requirements.txt
+.\run.cmd items.json --budget 1x --out answers_1x.json
+python score.py visible_key.json answers_1x.json
+```
+
+Note the order: `score.py` grades a file that `run` **produces**. Running it
+first gives `FileNotFoundError`. To score without spending any model calls,
+use the recorded runs in [results/](results/) instead.
 
 Scoring, with the provided scorer:
 

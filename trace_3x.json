@@ -1,0 +1,1419 @@
+{
+ "budget": "3x",
+ "components": {
+  "solver": true,
+  "rules": true,
+  "strict": true,
+  "recover": true,
+  "vote": true,
+  "repair": true,
+  "mus": true,
+  "calib": true,
+  "softneg": true
+ },
+ "calls": {
+  "B2-000": 3,
+  "B2-001": 3,
+  "B2-002": 3,
+  "B2-003": 3,
+  "B2-004": 3,
+  "B2-005": 3,
+  "B2-006": 3,
+  "B2-007": 3,
+  "B2-008": 3,
+  "B2-009": 3,
+  "B2-010": 3,
+  "B2-011": 3,
+  "B2-012": 3,
+  "B2-013": 3,
+  "B2-014": 3,
+  "B2-015": 3,
+  "B2-016": 3,
+  "B2-017": 3,
+  "B2-018": 3,
+  "B2-019": 3,
+  "B2-020": 3,
+  "B2-021": 3,
+  "B2-022": 3,
+  "B2-023": 3,
+  "B2-024": 3,
+  "B2-025": 3,
+  "B2-026": 3,
+  "B2-027": 3,
+  "B2-028": 3,
+  "B2-029": 3,
+  "B2-030": 3,
+  "B2-031": 3,
+  "B2-032": 3,
+  "B2-033": 3,
+  "B2-034": 3,
+  "B2-035": 3,
+  "B2-036": 3,
+  "B2-037": 3,
+  "B2-038": 3,
+  "B2-039": 3,
+  "B2-040": 3,
+  "B2-041": 3,
+  "B2-042": 3,
+  "B2-043": 3,
+  "B2-044": 3,
+  "B2-045": 3,
+  "B2-046": 3,
+  "B2-047": 3,
+  "B2-048": 3,
+  "B2-049": 3,
+  "B2-050": 3,
+  "B2-051": 3,
+  "B2-052": 3,
+  "B2-053": 3,
+  "B2-054": 3,
+  "B2-055": 3,
+  "B2-056": 3,
+  "B2-057": 3,
+  "B2-058": 3,
+  "B2-059": 3
+ },
+ "items": {
+  "B2-000": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     10,
+     0
+    ],
+    [
+     "repair-core",
+     3,
+     2,
+     0
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 10
+  },
+  "B2-001": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     0
+    ],
+    [
+     "repair-core",
+     2,
+     2,
+     0
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 5
+  },
+  "B2-002": {
+   "case": "unique",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     8
+    ],
+    [
+     "recover",
+     8,
+     8
+    ],
+    [
+     "repair-missing",
+     10,
+     1
+    ],
+    [
+     "resample",
+     2,
+     1
+    ]
+   ],
+   "n_worlds": 1,
+   "n_cons": 10
+  },
+  "B2-003": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     9,
+     0
+    ],
+    [
+     "repair-core",
+     4,
+     2,
+     1
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 9
+  },
+  "B2-004": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     0
+    ],
+    [
+     "repair-core",
+     3,
+     2,
+     1
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 8
+  },
+  "B2-005": {
+   "case": "unique",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     0
+    ],
+    [
+     "resample",
+     2,
+     1
+    ],
+    [
+     "resample",
+     3,
+     1
+    ]
+   ],
+   "n_worlds": 1,
+   "n_cons": 7
+  },
+  "B2-006": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     2
+    ],
+    [
+     "resample",
+     2,
+     2
+    ],
+    [
+     "resample",
+     3,
+     2
+    ]
+   ],
+   "n_worlds": 2,
+   "n_cons": 8
+  },
+  "B2-007": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     9,
+     3
+    ],
+    [
+     "resample",
+     2,
+     3
+    ],
+    [
+     "resample",
+     3,
+     3
+    ]
+   ],
+   "n_worlds": 3,
+   "n_cons": 9
+  },
+  "B2-008": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     9,
+     0
+    ],
+    [
+     "repair-core",
+     5,
+     2,
+     1
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 9
+  },
+  "B2-009": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     5,
+     2
+    ],
+    [
+     "resample",
+     2,
+     2
+    ],
+    [
+     "resample",
+     3,
+     2
+    ]
+   ],
+   "n_worlds": 2,
+   "n_cons": 5
+  },
+  "B2-010": {
+   "case": "unique",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     7,
+     16
+    ],
+    [
+     "recover",
+     7,
+     16
+    ],
+    [
+     "repair-missing",
+     12,
+     1
+    ],
+    [
+     "resample",
+     2,
+     1
+    ]
+   ],
+   "n_worlds": 1,
+   "n_cons": 12
+  },
+  "B2-011": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     1,
+     144
+    ],
+    [
+     "recover",
+     1,
+     144
+    ],
+    [
+     "repair-missing",
+     7,
+     3
+    ],
+    [
+     "resample",
+     2,
+     3
+    ]
+   ],
+   "n_worlds": 3,
+   "n_cons": 7
+  },
+  "B2-012": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     0
+    ],
+    [
+     "repair-core",
+     4,
+     2,
+     0
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 8
+  },
+  "B2-013": {
+   "case": "unique",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     1
+    ],
+    [
+     "resample",
+     2,
+     1
+    ],
+    [
+     "resample",
+     3,
+     1
+    ]
+   ],
+   "n_worlds": 1,
+   "n_cons": 8
+  },
+  "B2-014": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     10,
+     0
+    ],
+    [
+     "repair-core",
+     3,
+     2,
+     1
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 10
+  },
+  "B2-015": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     9,
+     4
+    ],
+    [
+     "resample",
+     2,
+     4
+    ],
+    [
+     "resample",
+     3,
+     4
+    ]
+   ],
+   "n_worlds": 4,
+   "n_cons": 9
+  },
+  "B2-016": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     0
+    ],
+    [
+     "repair-core",
+     3,
+     2,
+     0
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 8
+  },
+  "B2-017": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     10,
+     2
+    ],
+    [
+     "resample",
+     2,
+     2
+    ],
+    [
+     "resample",
+     3,
+     2
+    ]
+   ],
+   "n_worlds": 2,
+   "n_cons": 10
+  },
+  "B2-018": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     9,
+     0
+    ],
+    [
+     "repair-core",
+     3,
+     2,
+     0
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 9
+  },
+  "B2-019": {
+   "case": "unique",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     1
+    ],
+    [
+     "resample",
+     2,
+     1
+    ],
+    [
+     "resample",
+     3,
+     1
+    ]
+   ],
+   "n_worlds": 1,
+   "n_cons": 8
+  },
+  "B2-020": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     0
+    ],
+    [
+     "repair-core",
+     3,
+     2,
+     1
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 8
+  },
+  "B2-021": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     7,
+     4
+    ],
+    [
+     "resample",
+     2,
+     4
+    ],
+    [
+     "resample",
+     3,
+     4
+    ]
+   ],
+   "n_worlds": 4,
+   "n_cons": 7
+  },
+  "B2-022": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     4
+    ],
+    [
+     "resample",
+     2,
+     2
+    ],
+    [
+     "resample",
+     3,
+     2
+    ]
+   ],
+   "n_worlds": 2,
+   "n_cons": 9
+  },
+  "B2-023": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     9,
+     0
+    ],
+    [
+     "repair-core",
+     4,
+     2,
+     0
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 9
+  },
+  "B2-024": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     10,
+     0
+    ],
+    [
+     "repair-core",
+     5,
+     2,
+     1
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 10
+  },
+  "B2-025": {
+   "case": "unique",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     1
+    ],
+    [
+     "resample",
+     2,
+     1
+    ],
+    [
+     "resample",
+     3,
+     1
+    ]
+   ],
+   "n_worlds": 1,
+   "n_cons": 8
+  },
+  "B2-026": {
+   "case": "unique",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     1
+    ],
+    [
+     "resample",
+     2,
+     1
+    ],
+    [
+     "resample",
+     3,
+     1
+    ]
+   ],
+   "n_worlds": 1,
+   "n_cons": 8
+  },
+  "B2-027": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     6,
+     2
+    ],
+    [
+     "resample",
+     2,
+     2
+    ],
+    [
+     "resample",
+     3,
+     2
+    ]
+   ],
+   "n_worlds": 2,
+   "n_cons": 6
+  },
+  "B2-028": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     7,
+     5
+    ],
+    [
+     "recover",
+     7,
+     5
+    ],
+    [
+     "resample",
+     2,
+     4
+    ],
+    [
+     "resample",
+     3,
+     4
+    ]
+   ],
+   "n_worlds": 4,
+   "n_cons": 8
+  },
+  "B2-029": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     7,
+     4
+    ],
+    [
+     "resample",
+     2,
+     4
+    ],
+    [
+     "resample",
+     3,
+     4
+    ]
+   ],
+   "n_worlds": 4,
+   "n_cons": 7
+  },
+  "B2-030": {
+   "case": "unique",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     3,
+     22
+    ],
+    [
+     "recover",
+     3,
+     22
+    ],
+    [
+     "repair-missing",
+     8,
+     1
+    ],
+    [
+     "resample",
+     2,
+     1
+    ]
+   ],
+   "n_worlds": 1,
+   "n_cons": 8
+  },
+  "B2-031": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     9,
+     6
+    ],
+    [
+     "recover",
+     9,
+     6
+    ],
+    [
+     "resample",
+     2,
+     4
+    ],
+    [
+     "resample",
+     3,
+     4
+    ]
+   ],
+   "n_worlds": 4,
+   "n_cons": 10
+  },
+  "B2-032": {
+   "case": "unique",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     1
+    ],
+    [
+     "resample",
+     2,
+     1
+    ],
+    [
+     "resample",
+     3,
+     1
+    ]
+   ],
+   "n_worlds": 1,
+   "n_cons": 8
+  },
+  "B2-033": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     0,
+     720
+    ],
+    [
+     "recover",
+     1,
+     144
+    ],
+    [
+     "repair-missing",
+     6,
+     4
+    ],
+    [
+     "resample",
+     2,
+     4
+    ]
+   ],
+   "n_worlds": 4,
+   "n_cons": 6
+  },
+  "B2-034": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     7,
+     0
+    ],
+    [
+     "repair-core",
+     5,
+     2,
+     1
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 7
+  },
+  "B2-035": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     11,
+     4
+    ],
+    [
+     "resample",
+     2,
+     4
+    ],
+    [
+     "resample",
+     3,
+     4
+    ]
+   ],
+   "n_worlds": 4,
+   "n_cons": 11
+  },
+  "B2-036": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     9,
+     2
+    ],
+    [
+     "resample",
+     2,
+     2
+    ],
+    [
+     "resample",
+     3,
+     2
+    ]
+   ],
+   "n_worlds": 2,
+   "n_cons": 9
+  },
+  "B2-037": {
+   "case": "unique",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     1
+    ],
+    [
+     "resample",
+     2,
+     1
+    ],
+    [
+     "resample",
+     3,
+     1
+    ]
+   ],
+   "n_worlds": 1,
+   "n_cons": 8
+  },
+  "B2-038": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     7,
+     6
+    ],
+    [
+     "recover",
+     7,
+     6
+    ],
+    [
+     "resample",
+     2,
+     2
+    ],
+    [
+     "resample",
+     3,
+     2
+    ]
+   ],
+   "n_worlds": 2,
+   "n_cons": 8
+  },
+  "B2-039": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     0
+    ],
+    [
+     "repair-core",
+     3,
+     2,
+     1
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 8
+  },
+  "B2-040": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     10,
+     2
+    ],
+    [
+     "resample",
+     2,
+     2
+    ],
+    [
+     "resample",
+     3,
+     2
+    ]
+   ],
+   "n_worlds": 2,
+   "n_cons": 10
+  },
+  "B2-041": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     3
+    ],
+    [
+     "resample",
+     2,
+     3
+    ],
+    [
+     "resample",
+     3,
+     3
+    ]
+   ],
+   "n_worlds": 3,
+   "n_cons": 8
+  },
+  "B2-042": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     9,
+     0
+    ],
+    [
+     "repair-core",
+     3,
+     2,
+     0
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 9
+  },
+  "B2-043": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     9,
+     0
+    ],
+    [
+     "repair-core",
+     3,
+     2,
+     1
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 9
+  },
+  "B2-044": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     9,
+     0
+    ],
+    [
+     "repair-core",
+     3,
+     2,
+     0
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 9
+  },
+  "B2-045": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     7,
+     2
+    ],
+    [
+     "resample",
+     2,
+     2
+    ],
+    [
+     "resample",
+     3,
+     2
+    ]
+   ],
+   "n_worlds": 2,
+   "n_cons": 7
+  },
+  "B2-046": {
+   "case": "unique",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     7,
+     0
+    ],
+    [
+     "resample",
+     2,
+     1
+    ],
+    [
+     "resample",
+     3,
+     1
+    ]
+   ],
+   "n_worlds": 1,
+   "n_cons": 6
+  },
+  "B2-047": {
+   "case": "unique",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     6,
+     2
+    ],
+    [
+     "resample",
+     2,
+     1
+    ],
+    [
+     "resample",
+     3,
+     1
+    ]
+   ],
+   "n_worlds": 1,
+   "n_cons": 7
+  },
+  "B2-048": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     10,
+     0
+    ],
+    [
+     "resample",
+     2,
+     2
+    ],
+    [
+     "resample",
+     3,
+     2
+    ]
+   ],
+   "n_worlds": 2,
+   "n_cons": 9
+  },
+  "B2-049": {
+   "case": "unique",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     7,
+     1
+    ],
+    [
+     "resample",
+     2,
+     1
+    ],
+    [
+     "resample",
+     3,
+     1
+    ]
+   ],
+   "n_worlds": 1,
+   "n_cons": 7
+  },
+  "B2-050": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     10,
+     0
+    ],
+    [
+     "repair-core",
+     3,
+     2,
+     0
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 10
+  },
+  "B2-051": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     7,
+     0
+    ],
+    [
+     "repair-core",
+     4,
+     2,
+     0
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 6
+  },
+  "B2-052": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     0
+    ],
+    [
+     "repair-missing",
+     9,
+     2
+    ],
+    [
+     "resample",
+     2,
+     2
+    ]
+   ],
+   "n_worlds": 2,
+   "n_cons": 9
+  },
+  "B2-053": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     2
+    ],
+    [
+     "resample",
+     2,
+     2
+    ],
+    [
+     "resample",
+     3,
+     2
+    ]
+   ],
+   "n_worlds": 2,
+   "n_cons": 8
+  },
+  "B2-054": {
+   "case": "unique",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     1
+    ],
+    [
+     "resample",
+     2,
+     1
+    ],
+    [
+     "resample",
+     3,
+     1
+    ]
+   ],
+   "n_worlds": 1,
+   "n_cons": 8
+  },
+  "B2-055": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     2,
+     240
+    ],
+    [
+     "recover",
+     2,
+     240
+    ],
+    [
+     "repair-missing",
+     8,
+     2
+    ],
+    [
+     "resample",
+     2,
+     2
+    ]
+   ],
+   "n_worlds": 2,
+   "n_cons": 8
+  },
+  "B2-056": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     7,
+     0
+    ],
+    [
+     "repair-core",
+     3,
+     2,
+     0
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 7
+  },
+  "B2-057": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     10,
+     0
+    ],
+    [
+     "resample",
+     2,
+     2
+    ],
+    [
+     "resample",
+     3,
+     2
+    ]
+   ],
+   "n_worlds": 2,
+   "n_cons": 9
+  },
+  "B2-058": {
+   "case": "ambiguous",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     8,
+     4
+    ],
+    [
+     "resample",
+     2,
+     4
+    ],
+    [
+     "resample",
+     3,
+     4
+    ]
+   ],
+   "n_worlds": 4,
+   "n_cons": 8
+  },
+  "B2-059": {
+   "case": "inconsistent",
+   "calls": 3,
+   "trace": [
+    [
+     "extract",
+     9,
+     0
+    ],
+    [
+     "repair-core",
+     3,
+     2,
+     0
+    ]
+   ],
+   "n_worlds": 0,
+   "n_cons": 9
+  }
+ }
+}
