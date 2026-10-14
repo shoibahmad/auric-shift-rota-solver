@@ -11,14 +11,18 @@ __pycache__/
 venv/
 .pytest_cache/
 
-# Run artifacts
+# Run artifacts. Everything the writeup actually cites is recorded under
+# fixtures/ instead, so a clean checkout can reproduce it without these.
 runs/
 out/
 *.log
 answers*.json
 !example_answers.json
-interview
+
 # Interview preparation material. Deliberately untracked: the repository is the
 # take-home submission, and this is personal prep that does not belong in it.
 interview/
-dist/dist/
+
+# Where the review archive is built, by `git archive`. Tracking it would make
+# each build swallow the previous one.
+dist/
