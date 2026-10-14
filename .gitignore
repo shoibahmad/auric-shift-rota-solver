@@ -21,3 +21,4 @@ interview
 # Interview preparation material. Deliberately untracked: the repository is the
 # take-home submission, and this is personal prep that does not belong in it.
 interview/
+dist/dist/

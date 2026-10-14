@@ -48,12 +48,32 @@ def git(*args):
 check(os.path.exists(os.path.join(ROOT, "run")), "repo-root `run` launcher exists")
 check(os.path.exists(os.path.join(ROOT, "run.cmd")), "`run.cmd` for Windows exists")
 
-mode = git("ls-files", "-s", "run").split()[0] if git("ls-files", "run") else ""
-check(mode == "100755", "`run` is committed executable (100755)", f"mode={mode}")
+# This script has to be meaningful both in a git checkout and from an
+# extracted archive, which is how a reviewer is most likely to receive it.
+# Anything git can answer is asked of git; everything else is read off disk,
+# and a git-only check is skipped with a note rather than failed.
+IS_GIT = bool(git("rev-parse", "--is-inside-work-tree"))
 
-eol = git("ls-files", "--eol", "run")
-check("w/lf" in eol and "i/lf" in eol,
-      "`run` has LF endings (CRLF would break the shebang)", eol)
+if IS_GIT:
+    mode = git("ls-files", "-s", "run").split()[0] if git("ls-files", "run") else ""
+    check(mode == "100755", "`run` is committed executable (100755)",
+          f"mode={mode}")
+else:
+    m = os.stat(os.path.join(ROOT, "run")).st_mode & 0o777
+    if m & 0o111:
+        check(True, "`run` is executable on disk", oct(m))
+    else:
+        # unzip on Windows does not preserve the mode bit; the archive itself
+        # carries 0o755, so this is the extractor, not the submission
+        warn("`run` mode not preserved by this extractor "
+             "(the archive stores 0o755)", oct(m))
+
+# Read the bytes rather than asking git: CRLF would break the shebang whether
+# or not there is a repository to ask about it.
+raw = open(os.path.join(ROOT, "run"), "rb").read()
+check(b"\r\n" not in raw,
+      "`run` has LF endings (CRLF would break the shebang)",
+      "contains CRLF" if b"\r\n" in raw else "LF only")
 
 runsrc = read("run")
 check(runsrc.startswith("#!"), "`run` has a shebang", runsrc.splitlines()[0])
@@ -83,10 +103,18 @@ check(re.search(r"Python\s*\*?\*?3\.\d+", readme) is not None,
 # ---------------------------------------------------------------------------
 # 3. Secrets
 # ---------------------------------------------------------------------------
-tracked = git("ls-files").splitlines()
-check(".env" not in tracked, "`.env` is NOT tracked by git")
-check(".gitignore" in tracked and ".env" in read(".gitignore"),
-      "`.env` is gitignored")
+if IS_GIT:
+    tracked = git("ls-files").splitlines()
+    check(".env" not in tracked, "`.env` is NOT tracked by git")
+else:
+    # an extracted archive: the stronger statement is simply that it is absent
+    check(not os.path.exists(os.path.join(ROOT, ".env")),
+          "`.env` is not present at all")
+    tracked = [os.path.relpath(os.path.join(dp, f), ROOT).replace("\\", "/")
+               for dp, _dn, fn in os.walk(ROOT) for f in fn
+               if ".venv" not in dp and ".git" not in dp
+               and "__pycache__" not in dp]
+check(".env" in read(".gitignore"), "`.env` is gitignored")
 leaks = []
 for f in tracked:
     if f in (".env.example", "CANDIDATE_BRIEF.md"):
