@@ -19,14 +19,20 @@ which is the point of having both.
 
 ### What "reproduces" means here
 
-Over **27 runs of the unmodified pipeline** (`dev/summarise_runs.py`), the
+Over **33 runs of the unmodified pipeline** (`dev/summarise_runs.py`), the
 full system measures:
 
 | budget | n | mean | SD | observed range |
 |---|---|---|---|---|
-| 1x | 9 | 0.469 | 0.041 | 0.417 - 0.533 |
+| 1x | 15 | 0.481 | 0.040 | 0.417 - 0.533 |
 | 3x | 9 | 0.504 | 0.043 | 0.450 - 0.583 |
 | 10x | 9 | 0.504 | 0.034 | 0.450 - 0.550 |
+
+1x carries n=15 because the `-vote` and `-repair` cells at one call are the
+same code path as `full` -- see the null, below -- so they are extra samples of
+the shipped system rather than a different one. That is also why the `full` 1x
+cell reads 0.467 while the pooled estimate is 0.481: three runs is a small
+sample of a distribution this wide.
 
 **A single re-run should be expected to land in the observed range, not on the
 mean.** That spread is a property of `temperature=1.0` on a 60-item set, not

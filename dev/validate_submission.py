@@ -261,9 +261,14 @@ required = {
     "different writers / phrasing transfer": "written by people" in w,
     # phrasing-independent: the brief asks for the run count to be stated,
     # so look for any statement of one rather than one particular wording
+    # phrasing-independent: the brief asks for the run count to be stated,
+    # so accept any statement of one -- prose or an `n` column -- rather than
+    # one particular wording. An earlier version hard-coded "nine runs" and
+    # started failing the moment the pooled estimate moved to n=15.
     "how many runs each number came from": any(
         t in w for t in ("runs per budget", "runs each", "three runs",
-                         "nine runs", "runs per cell", "n=9")),
+                         "nine runs", "runs per cell", "runs in total",
+                         "over the runs", "n=")),
 }
 for label, ok in required.items():
     check(ok, f"writeup covers: {label}")

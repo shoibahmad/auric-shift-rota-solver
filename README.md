@@ -11,15 +11,17 @@ enumerating the 720 possible worlds of an item and reasoning over the set.
 - **Everything downstream is symbolic**: world enumeration, case decision, and
   minimal-unsatisfiable-subset search for the citations.
 
-| budget | macro exact match (n=9) | observed range | per-kind (u / a / i) |
-|---|---|---|---|
-| 1x | **0.469 +/- 0.041** | 0.417 - 0.533 | 0.42 / 0.38 / 0.60 |
-| 3x | **0.504 +/- 0.043** | 0.450 - 0.583 | 0.50 / 0.47 / 0.55 |
-| 10x | **0.504 +/- 0.034** | 0.450 - 0.550 | 0.52 / 0.45 / 0.60 |
-| the same model with no formal layer | **0.000 +/- 0.000** | - | 0.00 / 0.00 / 0.00 |
+| budget | macro exact match | n | observed range | per-kind (u / a / i) |
+|---|---|---|---|---|
+| 1x | **0.481 +/- 0.040** | 15 | 0.417 - 0.533 | 0.45 / 0.44 / 0.55 |
+| 3x | **0.504 +/- 0.043** | 9 | 0.450 - 0.583 | 0.50 / 0.47 / 0.55 |
+| 10x | **0.504 +/- 0.034** | 9 | 0.450 - 0.550 | 0.52 / 0.45 / 0.60 |
+| the same model with no formal layer | **0.000 +/- 0.000** | 9 | - | 0.00 / 0.00 / 0.00 |
 
-Nine runs per budget, provided scorer, `visible_key.json`. A single re-run
-lands anywhere in the observed range, not on the mean -- the spread is a
+Provided scorer, `visible_key.json`; `dev/summarise_runs.py` pools them. 1x
+carries n=15 because the `-vote` and `-repair` ablation cells at one call are
+the same code path as `full` and so measure the shipped system again. A single
+re-run lands anywhere in the observed range, not on the mean -- the spread is a
 property of `temperature=1.0`, not of the system. See
 [WRITEUP.md](WRITEUP.md) for how the model was characterised, why each
 component exists, what was removed, and where the system breaks --

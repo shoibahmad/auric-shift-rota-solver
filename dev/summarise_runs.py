@@ -35,10 +35,27 @@ def add(b, v, where):
         src[b].append(where)
 
 
-for p in sorted(glob.glob(os.path.join(ROOT, "runs/ablation/full_*_score.json"))):
-    m = re.match(r"full_(1x|3x|10x)_r(\d+)_score\.json$", os.path.basename(p))
-    d = json.load(io.open(p, encoding="utf-8"))
-    add(m.group(1), d["result"]["macro_exact_match"], "ablation")
+# `full`, plus the two arms that are the SAME code path at 1x. Everything
+# `vote` and `repair` do sits inside `while client.left(iid) > 0:` in
+# pipeline.py, and at one call per item that loop never runs -- so
+# `-vote 1x` and `-repair 1x` are the shipped configuration measured again,
+# not different systems. Pooling them triples the sample on the budget the
+# brief weights most heavily. They are NOT pooled at 3x/10x, where the
+# components do act and the arms are genuinely different systems.
+IDENTICAL_AT_1X = ("full", "no_vote", "no_repair")
+for arm in IDENTICAL_AT_1X:
+    for p in sorted(glob.glob(os.path.join(ROOT,
+                                           f"runs/ablation/{arm}_*_score.json"))):
+        m = re.match(rf"{arm}_(1x|3x|10x)_r\d+_score\.json$",
+                     os.path.basename(p))
+        if not m:
+            continue
+        b = m.group(1)
+        if arm != "full" and b != "1x":
+            continue
+        d = json.load(io.open(p, encoding="utf-8"))
+        add(b, d["result"]["macro_exact_match"],
+            "ablation" if arm == "full" else f"ablation/{arm}@1x")
 
 for p in sorted(glob.glob(os.path.join(ROOT, "runs/variance/*.json"))):
     m = re.match(r"(1x|3x|10x)_r(\d+)\.json$", os.path.basename(p))

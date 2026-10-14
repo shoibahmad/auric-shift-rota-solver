@@ -4,16 +4,18 @@
 one constraint or into nothing. Nothing in the answering pipeline pattern-matches
 the notes; everything after extraction is symbolic and exact.
 
-| budget | macro (n=9) | range | u / a / i |
-|---|---|---|---|
-| **1×** | **0.469 ± 0.041** | 0.417–0.533 | 0.42 / 0.38 / 0.60 |
-| **3×** | **0.504 ± 0.043** | 0.450–0.583 | 0.50 / 0.47 / 0.55 |
-| **10×** | **0.504 ± 0.034** | 0.450–0.550 | 0.52 / 0.45 / 0.60 |
-| no formal layer | **0.000** | — | 0.00 / 0.00 / 0.00 |
+| budget | macro | n | range | u / a / i |
+|---|---|---|---|---|
+| **1×** | **0.481 ± 0.040** | 15 | 0.417–0.533 | 0.45 / 0.44 / 0.55 |
+| **3×** | **0.504 ± 0.043** | 9 | 0.450–0.583 | 0.50 / 0.47 / 0.55 |
+| **10×** | **0.504 ± 0.034** | 9 | 0.450–0.550 | 0.52 / 0.45 / 0.60 |
+| no formal layer | **0.000** | 9 | — | 0.00 / 0.00 / 0.00 |
 
-Nine runs per budget; the last row is the brief's 0.0% reproduced. **3× and 10×
-are equal to three decimals.** Each figure is reproduced by one `dev/` script;
-tables in [ABLATION.md](ABLATION.md).
+Mean ± population SD over the runs in the `n` column, 33 in total; the last
+row is the brief's 0.0% reproduced. **All three budgets sit within half a
+standard deviation of each other.** 1× has n=15 because `-vote`/`-repair` at
+one call are the *same code path* as `full`. Tables:
+[ABLATION.md](ABLATION.md).
 
 ## 1. Characterising the model first
 
@@ -41,10 +43,9 @@ items — so every remaining point is an extraction problem.
 
 **The spine.** One call translates the lines; the solver enumerates all 720
 worlds. One world is `unique`, two or more `ambiguous` (all returned), none
-`inconsistent`. The citation is a minimal unsatisfiable subset found by deletion —
-*definitionally* the scorer's rule, not an approximation of it. Citing every
-constraining line instead scores **0.00** on all 20 inconsistent items (`mus`,
-−0.167); citing more is disqualifying.
+`inconsistent`. The citation is a minimal unsatisfiable subset found by deletion
+— *definitionally* the scorer's rule. Citing every constraining line instead
+scores **0.00** on all 20 inconsistent items (`mus`, −0.167).
 
 **Two free repairs, worth more than either paid one at 1x.** `calib` (−0.022): every
 real conflicting set has ≥3 statements — **none of size 2** — so a two-statement
@@ -59,23 +60,23 @@ it.
 
 **`repair`.** The world count proves extraction error with no key: `>4` re-reads
 only the lines read as inert, `0` re-reads *exactly the core*. Impossible answers
-fall from **11 at 1× to 1 at 3×**. **Reply format** was a component in disguise:
-dictating the reply's first characters took coverage **68% → 89%**.
+fall from **11 at 1× to 1 at 3×**. **Reply format** was a component in
+disguise: dictating the reply's first characters took coverage **68% → 89%**.
 
 ## 3. What I built and then removed
 
 **Two aggregation designs.** Per-line vote merging made the curve non-monotone
 (10× fell to 0.400) by dropping constraints only a minority of passes found,
-dissolving correctly-detected contradictions; verdict-majority voting replaced it
-and was also wrong. Replaying one three-pass log with the extraction fixed,
+dissolving correctly-detected contradictions; verdict-majority replaced it and
+was also wrong. Replaying one three-pass log with the extraction fixed,
 **every way of combining three extractions lost to the best single one**
 (0.383–0.517 vs passes of 0.533 / 0.400 / 0.550): the errors are systematic, so
-averaging reinforces them. What works is *selection* — keep the first candidate
-not provably wrong (0.567, saturating at three).
+averaging reinforces them. What works is *selection* — keep the first
+candidate not provably wrong (0.567).
 
 **Restatement agreement, removed** after measuring that the scorer trap it
-guarded cannot fire; **`strict`** measures at zero and is kept anyway, because
-refusing to repair a hallucinated name is a property I want held out.
+guarded cannot fire. **`strict`** measures at zero and is kept anyway: refusing
+to repair a hallucinated name is a property I want held out.
 
 ## 4. Where it breaks, and why the curve is flat
 
@@ -84,7 +85,7 @@ Five extractions of all 60 items, every line-judgement bucketed:
 reachable by resampling, and that 4.0% is mostly *silent* under-extraction (30 of
 46 are real constraints read as nothing). An item needs its whole reading right, so
 **only 28 of 60 items have no permanently-wrong line (46.7%)** — the ceiling
-resampling can reach, and the system already sits on it at one call.
+resampling reaches, and the system already sits on it at one call.
 
 **Under-extraction on unique items** is the largest bucket (9 of 20 declared
 ambiguous at 1×): nothing separates "genuinely ambiguous" from "one constraint
