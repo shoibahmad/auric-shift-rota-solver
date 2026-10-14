@@ -31,9 +31,11 @@ except Exception:                                                # noqa: BLE001
 # die on a traceback there.
 ABL = os.path.join(ROOT, "runs/ablation")
 VAR = os.path.join(ROOT, "runs/variance")
+E2E = os.path.join(ROOT, "runs/e2e")
 if not glob.glob(os.path.join(ABL, "*_score.json")):
     ABL = os.path.join(ROOT, "fixtures/scores")
     VAR = os.path.join(ROOT, "fixtures/scores/variance")
+    E2E = os.path.join(ROOT, "fixtures/scores/e2e")
     SOURCE = "fixtures/scores (recorded; run ablate.py to refresh)"
 else:
     SOURCE = "runs/ (fresh)"
@@ -77,7 +79,7 @@ for p in sorted(glob.glob(os.path.join(VAR, "*.json"))):
     add(m.group(1), d.get("macro", d.get("macro_exact_match")), "variance")
 
 for b in ("1x", "3x", "10x"):
-    p = os.path.join(ROOT, "runs/e2e", f"score_{b}.json")
+    p = os.path.join(E2E, f"score_{b}.json")
     if os.path.exists(p):
         add(b, json.load(io.open(p, encoding="utf-8"))["macro_exact_match"],
             "e2e")
