@@ -16,7 +16,14 @@ venv/
 runs/
 out/
 *.log
+
+# Anything a run writes into the working directory. The documented commands
+# put answers and traces here, and `--drop <arm>` outputs land here too; none
+# of it belongs in the repository, and `results/` carries the samples that do.
 answers*.json
+trace*.json
+nosolver.json
+a_*.json
 !example_answers.json
 
 # Interview preparation material. Deliberately untracked: the repository is the
