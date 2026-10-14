@@ -25,6 +25,19 @@ try:
 except Exception:                                                # noqa: BLE001
     pass
 
+# Fresh results if you have just produced them, otherwise the recorded ones
+# shipped in fixtures/scores. A clean checkout has no runs/ directory -- it is
+# gitignored -- and this script backing the writeup's headline figure must not
+# die on a traceback there.
+ABL = os.path.join(ROOT, "runs/ablation")
+VAR = os.path.join(ROOT, "runs/variance")
+if not glob.glob(os.path.join(ABL, "*_score.json")):
+    ABL = os.path.join(ROOT, "fixtures/scores")
+    VAR = os.path.join(ROOT, "fixtures/scores/variance")
+    SOURCE = "fixtures/scores (recorded; run ablate.py to refresh)"
+else:
+    SOURCE = "runs/ (fresh)"
+
 vals = {"1x": [], "3x": [], "10x": []}
 src = {"1x": [], "3x": [], "10x": []}
 
@@ -44,8 +57,7 @@ def add(b, v, where):
 # components do act and the arms are genuinely different systems.
 IDENTICAL_AT_1X = ("full", "no_vote", "no_repair")
 for arm in IDENTICAL_AT_1X:
-    for p in sorted(glob.glob(os.path.join(ROOT,
-                                           f"runs/ablation/{arm}_*_score.json"))):
+    for p in sorted(glob.glob(os.path.join(ABL, f"{arm}_*_score.json"))):
         m = re.match(rf"{arm}_(1x|3x|10x)_r\d+_score\.json$",
                      os.path.basename(p))
         if not m:
@@ -57,18 +69,26 @@ for arm in IDENTICAL_AT_1X:
         add(b, d["result"]["macro_exact_match"],
             "ablation" if arm == "full" else f"ablation/{arm}@1x")
 
-for p in sorted(glob.glob(os.path.join(ROOT, "runs/variance/*.json"))):
+for p in sorted(glob.glob(os.path.join(VAR, "*.json"))):
     m = re.match(r"(1x|3x|10x)_r(\d+)\.json$", os.path.basename(p))
     if not m:
         continue
     d = json.load(io.open(p, encoding="utf-8"))
-    add(m.group(1), d["macro"], "variance")
+    add(m.group(1), d.get("macro", d.get("macro_exact_match")), "variance")
 
 for b in ("1x", "3x", "10x"):
     p = os.path.join(ROOT, "runs/e2e", f"score_{b}.json")
     if os.path.exists(p):
         add(b, json.load(io.open(p, encoding="utf-8"))["macro_exact_match"],
             "e2e")
+
+if not any(vals.values()):
+    sys.exit("No scored runs found in runs/ or fixtures/scores. "
+             "Produce some with:\n"
+             "  python3 ablate.py --budgets 1x --runs 1 --arms full "
+             "--outdir runs/ablation")
+
+print(f"source: {SOURCE}\n")
 
 print(f"{'budget':8s} {'n':>3s} {'mean':>7s} {'sd':>7s} {'min':>7s} "
       f"{'max':>7s}   runs")

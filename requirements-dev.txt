@@ -1,0 +1,10 @@
+# Only for the PDF-rendering dev tools: dev/page_count.py (which measures the
+# writeup's real page count) and the two interview/ document builders.
+#
+# Deliberately NOT in requirements.txt. The answering system needs `openai`
+# and nothing else, and a grader re-running the submission should not have to
+# install a PDF toolchain to do it.
+#
+#   pip install -r requirements-dev.txt
+reportlab==4.4.7
+PyMuPDF==1.27.2

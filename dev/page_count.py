@@ -11,7 +11,14 @@ import re
 import sys
 import tempfile
 
-from reportlab.lib.pagesizes import A4
+try:
+    from reportlab.lib.pagesizes import A4
+except ImportError:
+    raise SystemExit(
+        "This script renders the writeup to measure its real page count, so "
+        "it needs the PDF tooling, which is deliberately not in "
+        "requirements.txt:\n"
+        "  pip install -r requirements-dev.txt") from None
 from reportlab.lib.styles import ParagraphStyle
 from reportlab.lib.units import mm
 from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, \

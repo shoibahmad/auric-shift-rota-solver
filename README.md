@@ -33,6 +33,7 @@ Python **3.13** (developed on 3.13.7; needs 3.9+).
 
 ```bash
 pip install -r requirements.txt           # openai==2.35.1, nothing else
+# optional: pip install -r requirements-dev.txt   # only for the PDF tools
 cp .env.example .env                      # then put the endpoint key in it
 ./run items.json --budget 1x  --out answers.json
 ./run items.json --budget 3x  --out answers_3x.json
@@ -125,7 +126,7 @@ Individual arms can be run by hand:
 | [ablate.py](ablate.py) | reproduces the ablation table |
 | [verify.py](verify.py) | pre-flight checks for the four auto-fail conditions |
 | [dev/](dev/) | characterisation probes and measurements; not part of the pipeline |
-| [fixtures/](fixtures/) | recorded extractions, so every measurement replays from a clean checkout with no model calls |
+| [fixtures/](fixtures/) | recorded extractions and scores, so every measurement replays from a clean checkout with no model calls |
 
 `dev/` is kept because the writeup's claims come from it, and each script
 reproduces exactly one measurement:

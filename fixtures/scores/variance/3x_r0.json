@@ -1,0 +1,9 @@
+{
+ "macro": 0.4667,
+ "per_case": {
+  "unique": 0.45,
+  "ambiguous": 0.4,
+  "inconsistent": 0.55
+ },
+ "calls": 179
+}
